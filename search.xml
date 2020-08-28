@@ -1,0 +1,628 @@
+<?xml version="1.0" encoding="utf-8"?>
+<search>
+  <entry>
+    <title>git学习笔记</title>
+    <url>/2020/08/25/git%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/</url>
+    <content><![CDATA[<h2 id="Git安装"><a href="#Git安装" class="headerlink" title="Git安装"></a>Git安装</h2><p><strong>linux</strong> </p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> sudo yum install git</span></span><br></pre></td></tr></table></figure>
+<a id="more"></a>
+
+<p>mac:  <a href="http://git-scm.com/download/mac">http://git-scm.com/download/mac</a></p>
+<p>windows:  <a href="http://git-scm.com/download/win">http://git-scm.com/download/win</a></p>
+<p>git官方文档:  <a href="https://git-scm.com/book/zh/v2">https://git-scm.com/book/zh/v2</a></p>
+<p>Git安装完之后，需要做最后一步配置，如果你没有做这项配置，是没有git公钥和私钥的，而<strong>上传代码到远程仓库</strong>的时候需要秘钥进行验证是否本人上传的，想要创建可以使用下面的方法：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">打开git bash，分别执行以下两句命令</span><br><span class="line">git config --global user.name “用户名”</span><br><span class="line">git config --global user.email “邮箱”</span><br></pre></td></tr></table></figure>
+
+<p>config 的三个作用域</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">--local 只对某个仓库有效</span><br><span class="line">--global 对当前用户所有仓库有效</span><br><span class="line">--system 对系统所有登录的用户有效</span><br><span class="line">--list</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="SSH配置"><a href="#SSH配置" class="headerlink" title="SSH配置"></a>SSH配置</h3><ol>
+<li>打开git bash。</li>
+<li>使用<code>cd ~/.ssh</code>可以查看是否已配置SSH。</li>
+<li>执行生成公钥和私钥的命令<code>ssh-keygen -t rsa</code> 并按回车3下(为什么按三下，是因为有提示你是否需要设置密码，如果设置了每次使用Git都会用到密码，一般都是直接不写为空，直接回车就好了)。会在一个文件夹里面生成一个私钥 id_rsa和一个公钥id_rsa.pub。（可执行<code>start ~</code>命令，生成的公私钥在 .ssh的文件夹里面）。</li>
+<li>.ssh如果不做特殊处理的话，一般是在<code>C:\Users\Administrator</code>目录下。如果看不到.ssh文件，可以使用<code>ls -ah</code>指令查看隐藏文件夹即可，这是存放秘钥的文件，打开这个文件会看到id_rsa和id_rsa.pub。id_rsa是私钥文件，id_rsa.pub是公钥文件。</li>
+<li>执行查看公钥的命令<code>cat ~/.ssh/id_rsa.pub</code>  。</li>
+</ol>
+<h2 id="建Git仓库"><a href="#建Git仓库" class="headerlink" title="建Git仓库"></a>建Git仓库</h2><p>两种场景:</p>
+<p>1.把已有的项目代码纳入Git管理</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">cd 项目代码所在的文件夹</span><br><span class="line">git init</span><br></pre></td></tr></table></figure>
+
+<p>2.建立新的项目直接用Git管理</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">cd 某个文件夹</span><br><span class="line">git init your_project #会在当前路径下创建和项目名相同的文件夹</span><br><span class="line">cd your_project</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">mkdir 创建目录</span><br><span class="line">echo &quot;&quot; &gt; 文件名 创建文件</span><br><span class="line">clear 清屏</span><br></pre></td></tr></table></figure>
+
+<p>在仓库中添加文件</p>
+<p>1.将文件拷贝到工作目录</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">cp ... .</span><br></pre></td></tr></table></figure>
+
+<p>2.测试文件符合要求后添加到暂存目录</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git add files</span><br><span class="line">git add -u 所有文件</span><br></pre></td></tr></table></figure>
+
+<p>3.查看文件是否被git管理</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git status</span><br></pre></td></tr></table></figure>
+
+<p>4.提交暂存区的文件</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git commit -m&#x27;更改理由&#x27; -am&#x27;..&#x27;从工作区直接提交</span><br></pre></td></tr></table></figure>
+
+
+
+<img src="https://i.loli.net/2020/08/25/zb1ZRmB3NkfMT2X.png" alt="image-20200122145213546" style="zoom: 50%;" />
+
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git add 更新将要提交的内容</span><br><span class="line">git restore 放弃工作目录中的更改</span><br><span class="line">git rm 移除</span><br></pre></td></tr></table></figure>
+
+<p>Git和其他版本控制系统如SVN的一个不同之处就是有暂存区的概念。</p>
+<h3 id="工作区（Working-Directory）"><a href="#工作区（Working-Directory）" class="headerlink" title="工作区（Working Directory）"></a>工作区（Working Directory）</h3><p>就是你在电脑里能看到的目录，比如我的<code>learngit</code>文件夹就是一个工作区</p>
+<h3 id="版本库（Repository）"><a href="#版本库（Repository）" class="headerlink" title="版本库（Repository）"></a>版本库（Repository）</h3><p>工作区有一个隐藏目录<code>.git</code>，这个不算工作区，而是Git的版本库。</p>
+<p>Git的版本库里存了很多东西，其中最重要的就是称为stage（或者叫index）的暂存区，还有Git为我们自动创建的第一个分支<code>master</code>，以及指向<code>master</code>的一个指针叫<code>HEAD</code>。</p>
+<p><img src="https://i.loli.net/2020/08/25/OefR9gPFKqdC1hI.png" alt="img"></p>
+<p><code>git add</code>把文件添加进去，实际上就是把文件修改添加到暂存区；</p>
+<p><code>git commit</code>提交更改，实际上就是把暂存区的所有内容提交到当前分支。</p>
+<p>给文件重名名</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git mv old new</span><br><span class="line">操作完后commit提交</span><br></pre></td></tr></table></figure>
+
+<p>查看版本历史,提交日志</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git log -n5 --oneline 最近5条 简明 </span><br><span class="line">git log --all --graph 所有分支 图像化关系</span><br></pre></td></tr></table></figure>
+
+<p>版本历史图形化工具</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">gitk</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">查看分支</span><br><span class="line">git branch -v</span><br><span class="line">创建分支</span><br><span class="line">git checkout -b 分支名 commitid</span><br><span class="line">切换分支</span><br><span class="line">git checkout 分支名</span><br></pre></td></tr></table></figure>
+
+<p>查看某个命令的帮助文档</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git help --web 命令  --web 在网页</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="git目录"><a href="#git目录" class="headerlink" title=".git目录"></a>.git目录</h2><p><strong>HEAD文件</strong>:指向了现在引用的分支</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">cat HEAD</span><br><span class="line">ref: refs/heads/master</span><br></pre></td></tr></table></figure>
+
+<p><strong>config文件</strong>:记录了用户的信息</p>
+<p><strong>refs/</strong>:引用目录,包含了heads和tags目录</p>
+<p>​    tags:标签 里程碑,项目开发到一定程度,给commit打一个标签如[v1.0] </p>
+<p>​    标签文件是tag类型 本身有一个40位的哈希值 ,内容包含了一个commit的类型的object</p>
+<p>​    heads:分支,如前后端建立独立的分支,互不影响,需要集成时可合并到一个公共的分支</p>
+<p>​    查看文件对象类型</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">cat 分支文件</span><br><span class="line">git cat-file -t 哈希值</span><br><span class="line">-p 看内容</span><br><span class="line">如果哈希值足以保证唯一性可以使用短的一部分</span><br></pre></td></tr></table></figure>
+
+<p>​    master文件为commit类型</p>
+<p>​    git branch -av查看分支可以看到master分支引用指针就是heads目录中master文件的哈希值</p>
+<p><strong>objects/</strong>:所有文件对象</p>
+<p>git在每次commit的时候都会生成一个tree对象、一个parent对象（如果不是第一次提交的话）、和一个commit对象，这个最顶层的tree就是对应整个工作目录，tree下面还有blob、tree对象，都是一串hash值指向对应的内容，当某个文件发生变动的时候会重新保存一次快照（hash），如果文件没有发生变动，保留的快照依然是上次的。</p>
+<p>松散对象 (loose object) 会被打包到pack/目录</p>
+<p>查看文件对象类型 为:tree</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git cat-file -t 文件名+哈希值</span><br></pre></td></tr></table></figure>
+
+<p>查看内容 包含一个blob文件,就是提交的内容</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git cat-file -p 文件名+哈希值</span><br></pre></td></tr></table></figure>
+
+<h2 id="git对象彼此的关系"><a href="#git对象彼此的关系" class="headerlink" title="git对象彼此的关系"></a>git对象彼此的关系</h2><img src="https://i.loli.net/2020/05/17/wkfcTLDnYlp89Xr.png" alt="image-20200128140710806" style="zoom: 50%;" />
+
+<p>每一次提交都会创建一个commit对象,一个commit对象对应包含一个tree对象,tree代表了当前时间点仓库目录结构的快照,blob指具体的文件,在git中如果两个文件内容相同就看作一个文件,不论文件名</p>
+<h2 id="git分离头指针"><a href="#git分离头指针" class="headerlink" title="git分离头指针"></a>git分离头指针</h2><p>如果不小心通过git checkout命令切换到某个commit中（即HEAD指向某个commit），git会提示我们正处于分离头指针的状态下（工作在没有分支的情况下），如果我们做了大量的修改，但是某天我们突然又切换到另一个commit时，我们的修改就有可能被git当做垃圾清除掉，因此这个动作十分危险。</p>
+<p>分离头指针的用处：进行尝试性的变更时</p>
+<p>试着修改某些文件时，如果觉得修改的效果不满意，可以直接切换到别的分支，丢弃当前修改</p>
+<p>如果我们切换出去时，觉得当前的修改十分重要，就按照git的提示创建一个新分支</p>
+<p>如果某个变更（提交）是非常重要的，那么一定要跟某个分支绑定在一起</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">创建新分支：</span><br><span class="line"></span><br><span class="line">git checkout -b  新分支名称  基于某个分支或者commit</span><br><span class="line"></span><br><span class="line">eg：git checkout -b newBranch master</span><br><span class="line"></span><br><span class="line">比较某两个commit的区别</span><br><span class="line"></span><br><span class="line">git diff 第一个commit 第二个commit</span><br><span class="line"></span><br><span class="line">eg：git diff HEAD HEAD^1  (当前的HEAD指向的commit和他的父级进行比对)</span><br><span class="line"></span><br><span class="line">HEAD^ ==HEAD~ == HEAD^1 == HEAD~1</span><br><span class="line"></span><br><span class="line">HEAD^^ == HEAD^1^1 == HEAD^2</span><br></pre></td></tr></table></figure>
+
+<h2 id="删除不需要的分支"><a href="#删除不需要的分支" class="headerlink" title="删除不需要的分支"></a>删除不需要的分支</h2><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git branch -D 分支名</span><br></pre></td></tr></table></figure>
+
+<h2 id="修改commit的message"><a href="#修改commit的message" class="headerlink" title="修改commit的message"></a>修改commit的message</h2><p>对最近一次commit的message做变更</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git commit --amend </span><br></pre></td></tr></table></figure>
+
+<p>更改之前的message</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git rebase -i 需更改commit的父级id </span><br><span class="line">执行后进入编辑,把需要修改的一次message前面的&#x27;pick&#x27;改为&#x27;r&#x27;或&#x27;reword&#x27;,保存退出,会跳转到修改message</span><br></pre></td></tr></table></figure>
+
+<h2 id="合并多个连续的commit"><a href="#合并多个连续的commit" class="headerlink" title="合并多个连续的commit"></a>合并多个连续的commit</h2><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git rebase -i 父级commitid</span><br><span class="line">执行后进入编辑,仅保留要合并到的commit的&#x27;pick&#x27;,把需要需要合并的几个&#x27;pick&#x27;改为&#x27;s&#x27;或&#x27;squash&#x27;,退出保存,修改说明</span><br></pre></td></tr></table></figure>
+
+<h2 id="合并多个间隔的commit"><a href="#合并多个间隔的commit" class="headerlink" title="合并多个间隔的commit"></a>合并多个间隔的commit</h2><p>首先<code>git log --graph</code>查看commit历史</p>
+<p>变基<code>git rebase -i 父commitid</code>进入vi</p>
+<p>将父commitid拷贝进来并改变顺序,放在要合并的commit上面</p>
+<p>要合并的commit的’pick’改为’s’</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">pick acf475ed #父commit</span><br><span class="line">s 7ac3c1cb8b92 #要合并的commit</span><br><span class="line">...其他</span><br></pre></td></tr></table></figure>
+
+<p>保存退出后报错:<code>interactive rebase in progress; onto 7ac3c1c</code></p>
+<p>然后执行<code>git rebase --continue</code>继续变基,进入vi</p>
+<p>怎加一个message,保存退出即可</p>
+<p>其他参考:<a href="https://segmentfault.com/a/1190000007748862">https://segmentfault.com/a/1190000007748862</a></p>
+<h2 id="git处理合并冲突"><a href="#git处理合并冲突" class="headerlink" title="git处理合并冲突"></a>git处理合并冲突</h2><p><strong>什么是合并冲突</strong></p>
+<p>在 Git 中，“合并（merging）” 是在形式上整合别的分支到你当前的工作分支的操作。你需要得到在另外一个上下文背景下的改动（这就也就是我们所提到过的，一个有效的分支应该是建立在一个上下文工作背景上的），并且合并它们到你的当前的工作文件中来。</p>
+<p>作为你的版本管理系统，Git 所带来的最伟大的改善就是它让合并操作变得非常轻松简单。在大多数情况下，Git 会自己弄清楚该如何整合这些新来的变化。</p>
+<p>当然，也存在极少数的情况，你必须自己手动地告诉 Git 该怎么做。最为常见的就是大家都改动了同一个文件。即便在这种情况下，Git  还是有可能自动地发现并解决掉这些冲突。但是，如果两个人同时更改了同一个文件的同一行代码，或者一个人改动了那些被另一个人删除了的代码，Git  就不能简单地确定到底谁的改动才是正确的。这时 Git 会把这些地方标记为一个冲突，你必须首先解决掉这些冲突，然后再继续你的工作。<br> 如何解决合并冲突</p>
+<p>当面对一个合并冲突时，我们首先要搞明白发生了什么。例如是不是你和你的同事都同时编辑了同一个文件的同一行代码呢？是不是他删除了一个你正在编辑的文件呢？是不是你们同时添加了一个相同文件名的文件呢？<br> 当你使用 “git status” 时， Git 会告诉你存在一个 “未合并的路径（unmerged paths）”，这只是用另外一个方式告诉你，存在一个或多个冲突：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git status</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> On branch contact-form</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> You have unmerged paths.</span></span><br><span class="line"><span class="meta">#</span><span class="bash">   (fix conflicts and run <span class="string">&quot;git commit&quot;</span>)</span></span><br><span class="line"><span class="meta">#</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> Unmerged paths:</span></span><br><span class="line"><span class="meta">#</span><span class="bash">   (use <span class="string">&quot;git add &lt;file&gt;...&quot;</span> to mark resolution)</span></span><br><span class="line"><span class="meta">#</span></span><br><span class="line"><span class="meta">#</span><span class="bash">       both modified:   contact.html</span></span><br><span class="line"><span class="meta">#</span></span><br><span class="line">no changes added to commit (use &quot;git add&quot; and/or &quot;git commit -a&quot;)1234567891011</span><br></pre></td></tr></table></figure>
+
+<p>就让我们来深入地探讨一下，如何去解决这些最常见的冲突。<br> 当两个改动发生在同一个文件的同一些行上，我们就要看看发生冲突的文件的内容了。Git 会非常友好地把文件中那些有问题的区域在  “&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD” 和 “&gt;&gt;&gt;&gt;&gt;&gt;&gt;  [other/branch/name]” 之间标记出来。</p>
+<p>第一个标记后的内容源于当前分支。在尖括号之后，Git 会告诉我们这些改动是从哪里（哪个分支）来的。然后有冲突的改动会被 “=======” 分割起来。<br> 现在，当清理文件并得到最终代码后，所有剩下的工作就是将这个结果保存起来，并且马上退出这个合并工具。这样 Git 就会知道你已经完成了这个操作。Git 会在后台对那个文件自动地执行 “git add” 命令。这也标志着冲突已经解决了。如果你<em>不</em>使用合并工具，而是手动在文本编辑器中清理这些冲突，你必须手动地将文件标记为已解决状态（通过执行命令 “git add ”）。</p>
+<p>最终，当所有的冲突被解决后，你必须通过一个正常的提交操作来完成这个清理合并冲突的工作。</p>
+<h2 id="如何撤销一个合并"><a href="#如何撤销一个合并" class="headerlink" title="如何撤销一个合并"></a>如何撤销一个合并</h2><p>你应该始终牢记，你可以在任何时间执行撤销操作，并返回到你开始合并之前的状态。要对自己有信心，你不会破坏项目中的任何东西。只要在命令行界面中键入 “git merge –abort” 命令，你的合并操作就会被安全的撤销。</p>
+<p>当你解决完冲突，并且在合并完成后发现一个错误，你仍然还是有机会来简单地撤销它。你只须要键入 “git reset –hard ” 命令，系统就会回滚到那个合并开始前的状态，然后重新开始吧！</p>
+<p>git status会有rebase in progress; onto ……这种问题？ 该怎么解决？</p>
+<p>是你之前或者刚刚用过 <code>git rebase</code>，但上一次的进程还没有完成。</p>
+<p>可以直接 <code>git rebase --abort</code> 来取消目前的进程</p>
+<h2 id="比较暂存区和HEAD所含文件的差异"><a href="#比较暂存区和HEAD所含文件的差异" class="headerlink" title="比较暂存区和HEAD所含文件的差异"></a>比较暂存区和HEAD所含文件的差异</h2><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git diff --cached</span><br></pre></td></tr></table></figure>
+
+<h2 id="比较工作区和暂存区所含文件的差异"><a href="#比较工作区和暂存区所含文件的差异" class="headerlink" title="比较工作区和暂存区所含文件的差异"></a>比较工作区和暂存区所含文件的差异</h2><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git diff</span><br><span class="line">git diff -- 可加具体文件名</span><br></pre></td></tr></table></figure>
+
+<h2 id="让暂存区恢复成和HEAD一样"><a href="#让暂存区恢复成和HEAD一样" class="headerlink" title="让暂存区恢复成和HEAD一样"></a>让暂存区恢复成和HEAD一样</h2><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git reset HEAD</span><br></pre></td></tr></table></figure>
+
+<h2 id="让工作区恢复为和暂存区一样"><a href="#让工作区恢复为和暂存区一样" class="headerlink" title="让工作区恢复为和暂存区一样"></a>让工作区恢复为和暂存区一样</h2><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git checkout -- 文件名</span><br></pre></td></tr></table></figure>
+
+<h2 id="取消暂存区部分文件的更改"><a href="#取消暂存区部分文件的更改" class="headerlink" title="取消暂存区部分文件的更改"></a>取消暂存区部分文件的更改</h2><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git reset HEAD -- 文件名</span><br></pre></td></tr></table></figure>
+
+<h2 id="消除最近几次的提交"><a href="#消除最近几次的提交" class="headerlink" title="消除最近几次的提交"></a>消除最近几次的提交</h2><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git reset --hard commitid(想回到的commit状态)</span><br></pre></td></tr></table></figure>
+
+<h2 id="查看不同提交的指定文件的差异"><a href="#查看不同提交的指定文件的差异" class="headerlink" title="查看不同提交的指定文件的差异"></a>查看不同提交的指定文件的差异</h2><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git diff 分支名或commitid 分支名或commitid -- 指定文件</span><br></pre></td></tr></table></figure>
+
+<h2 id="删除文件的正确做法"><a href="#删除文件的正确做法" class="headerlink" title="删除文件的正确做法"></a>删除文件的正确做法</h2><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git rm 文件名</span><br></pre></td></tr></table></figure>
+
+<h2 id="开发中临时加塞了紧急任务怎么处理"><a href="#开发中临时加塞了紧急任务怎么处理" class="headerlink" title="开发中临时加塞了紧急任务怎么处理"></a>开发中临时加塞了紧急任务怎么处理</h2><p>场景:开发中有一部分文件已经放到了暂存区,一部分还在工作区修改当中,但是测试发现对应的分支是有问题的,需要临时修复bug</p>
+<p>1.先把手头的工作备份到其他地方<code>git stash</code>,可以用<code>git stash list</code>查看</p>
+<p>2.修复完bug提交后再恢复继续</p>
+<p><code>git stash apply  </code> stash列表中存放的文件仍会保留</p>
+<p><code>git stash pop</code>stash列表中存放的文件会移除</p>
+<h2 id="指定不需要Git管理的文件"><a href="#指定不需要Git管理的文件" class="headerlink" title="指定不需要Git管理的文件"></a>指定不需要Git管理的文件</h2><p>gitHub新建仓库时会让你配置一个<code>.gitignore</code>文件,针对不同的语言指定不被git管理的文件类型</p>
+<p>只可以命名为<code>.gitignore</code></p>
+<p>如java</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line"># Compiled class file</span><br><span class="line">*.class</span><br><span class="line"># Package Files #</span><br><span class="line">*.jar</span><br><span class="line">*.war</span><br><span class="line">*.tar.gz</span><br><span class="line">*.zip</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<h2 id="将Git仓库备份到本地"><a href="#将Git仓库备份到本地" class="headerlink" title="将Git仓库备份到本地"></a>将Git仓库备份到本地</h2><p>常用的传输协议</p>
+<img src="https://i.loli.net/2020/08/25/cBJhQ4TCLmNA9xF.png" alt="image-20200129165637618" style="zoom:50%;" />
+
+<p>哑协议与智能协议</p>
+<p>直观区别:哑协议传输进度不可见,智能协议可见</p>
+<p>传输速度:智能协议比哑协议块</p>
+<p>推荐使用智能协议</p>
+<p>备份特点:多点备份</p>
+<img src="https://gomall-oss.oss-cn-beijing.aliyuncs.com/2020/08/25/0f4e90560ebd40d7989babbb3f7428fcimage-20200129170218098.png" alt="image-20200129170218098" style="zoom: 50%;" />
+
+<p>如果要和远端的仓库进行关联的话,需要<code>remote</code></p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git remote -v 查看</span><br><span class="line">git remote add 名字 地址 新建远端仓库</span><br></pre></td></tr></table></figure>
+
+<p>当本地仓库有新的分支，而远端并未添加进去时，直接push</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git push 远端仓库</span><br></pre></td></tr></table></figure>
+
+<h2 id="Git远程操作"><a href="#Git远程操作" class="headerlink" title="Git远程操作"></a>Git远程操作</h2><h3 id="git-clone"><a href="#git-clone" class="headerlink" title="git clone"></a>git clone</h3><p>远程操作的第一步，通常是从远程主机克隆一个版本库，这时就要用到<code>git clone</code>命令。</p>
+<blockquote>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git <span class="built_in">clone</span> &lt;版本库的网址&gt;</span></span><br></pre></td></tr></table></figure>
+</blockquote>
+<p>比如，克隆jQuery的版本库。</p>
+<blockquote>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git <span class="built_in">clone</span> https://github.com/jquery/jquery.git</span></span><br></pre></td></tr></table></figure>
+</blockquote>
+<p>该命令会在本地主机生成一个目录，与远程主机的版本库同名。如果要指定不同的目录名，可以将目录名作为<code>git clone</code>命令的第二个参数。</p>
+<blockquote>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git <span class="built_in">clone</span> &lt;版本库的网址&gt; &lt;本地目录名&gt;</span></span><br></pre></td></tr></table></figure>
+</blockquote>
+<p><code>git clone</code>支持多种协议，除了HTTP(s)以外，还支持SSH、Git、本地文件协议等</p>
+<h3 id="git-remote"><a href="#git-remote" class="headerlink" title="git remote"></a>git remote</h3><p>为了便于管理，Git要求每个远程主机都必须指定一个主机名。<code>git remote</code>命令就用于管理主机名。</p>
+<p>不带选项的时候，<code>git remote</code>命令列出所有远程主机。</p>
+<blockquote>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git remote</span></span><br><span class="line">origin</span><br></pre></td></tr></table></figure>
+</blockquote>
+<p>使用<code>-v</code>选项，可以参看远程主机的网址。</p>
+<blockquote>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git remote -v</span></span><br><span class="line">origin  git@github.com:jquery/jquery.git (fetch)</span><br><span class="line">origin  git@github.com:jquery/jquery.git (push)</span><br></pre></td></tr></table></figure>
+</blockquote>
+<p>上面命令表示，当前只有一台远程主机，叫做origin，以及它的网址。</p>
+<p>克隆版本库的时候，所使用的远程主机自动被Git命名为<code>origin</code>。如果想用其他的主机名，需要用<code>git clone</code>命令的<code>-o</code>选项指定。</p>
+<blockquote>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git <span class="built_in">clone</span> -o jQuery https://github.com/jquery/jquery.git</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> git remote</span></span><br><span class="line">jQuery</span><br></pre></td></tr></table></figure>
+</blockquote>
+<p>上面命令表示，克隆的时候，指定远程主机叫做jQuery。</p>
+<p><code>git remote show</code>命令加上主机名，可以查看该主机的详细信息。</p>
+<blockquote>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git remote show &lt;主机名&gt;</span></span><br></pre></td></tr></table></figure>
+</blockquote>
+<p><code>git remote add</code>命令用于添加远程主机。</p>
+<blockquote>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git remote add &lt;主机名&gt; &lt;网址&gt;</span></span><br></pre></td></tr></table></figure>
+</blockquote>
+<p><code>git remote rm</code>命令用于删除远程主机。</p>
+<blockquote>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git remote rm &lt;主机名&gt;</span></span><br></pre></td></tr></table></figure>
+</blockquote>
+<p><code>git remote rename</code>命令用于远程主机的改名。</p>
+<blockquote>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git remote rename &lt;原主机名&gt; &lt;新主机名&gt;</span></span><br></pre></td></tr></table></figure>
+</blockquote>
+<h3 id="git-fetch"><a href="#git-fetch" class="headerlink" title="git fetch"></a>git fetch</h3><p>一旦远程主机的版本库有了更新（Git术语叫做commit），需要将这些更新取回本地，这时就要用到<code>git fetch</code>命令。</p>
+<blockquote>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git fetch &lt;远程主机名&gt;</span></span><br></pre></td></tr></table></figure>
+</blockquote>
+<p>上面命令将某个远程主机的更新，全部取回本地。</p>
+<p><code>git fetch</code>命令通常用来查看其他人的进程，因为它取回的代码对你本地的开发代码没有影响。</p>
+<p>默认情况下，<code>git fetch</code>取回所有分支（branch）的更新。如果只想取回特定分支的更新，可以指定分支名。</p>
+<blockquote>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git fetch &lt;远程主机名&gt; &lt;分支名&gt;</span></span><br></pre></td></tr></table></figure>
+</blockquote>
+<p>比如，取回<code>origin</code>主机的<code>master</code>分支。</p>
+<blockquote>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git fetch origin master</span></span><br></pre></td></tr></table></figure>
+</blockquote>
+<p>所取回的更新，在本地主机上要用”远程主机名/分支名”的形式读取。比如<code>origin</code>主机的<code>master</code>，就要用<code>origin/master</code>读取。</p>
+<p><code>git branch</code>命令的<code>-r</code>选项，可以用来查看远程分支，<code>-a</code>选项查看所有分支。</p>
+<blockquote>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git branch -r</span></span><br><span class="line">origin/master</span><br><span class="line"></span><br><span class="line"><span class="meta">$</span><span class="bash"> git branch -a</span></span><br><span class="line">* master</span><br><span class="line">  remotes/origin/master</span><br></pre></td></tr></table></figure>
+</blockquote>
+<p>上面命令表示，本地主机的当前分支是<code>master</code>，远程分支是<code>origin/master</code>。</p>
+<p>取回远程主机的更新以后，可以在它的基础上，使用<code>git checkout</code>命令创建一个新的分支。</p>
+<blockquote>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git checkout -b newBrach origin/master</span></span><br></pre></td></tr></table></figure>
+</blockquote>
+<p>上面命令表示，在<code>origin/master</code>的基础上，创建一个新分支。</p>
+<p>此外，也可以使用<code>git merge</code>命令或者<code>git rebase</code>命令，在本地分支上合并远程分支。</p>
+<blockquote>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git merge origin/master</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 或者</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> git rebase origin/master</span></span><br></pre></td></tr></table></figure>
+</blockquote>
+<p>上面命令表示在当前分支上，合并<code>origin/master</code>。</p>
+<h3 id="git-pull"><a href="#git-pull" class="headerlink" title="git pull"></a>git pull</h3><p><code>git pull</code>命令的作用是，取回远程主机某个分支的更新，再与本地的指定分支合并。它的完整格式稍稍有点复杂。</p>
+<blockquote>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git pull &lt;远程主机名&gt; &lt;远程分支名&gt;:&lt;本地分支名&gt;</span></span><br></pre></td></tr></table></figure>
+</blockquote>
+<p>比如，取回<code>origin</code>主机的<code>next</code>分支，与本地的<code>master</code>分支合并，需要写成下面这样。</p>
+<blockquote>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git pull origin next:master</span></span><br></pre></td></tr></table></figure>
+</blockquote>
+<p>如果远程分支是与当前分支合并，则冒号后面的部分可以省略。</p>
+<blockquote>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git pull origin next</span></span><br></pre></td></tr></table></figure>
+</blockquote>
+<p>上面命令表示，取回<code>origin/next</code>分支，再与当前分支合并。实质上，这等同于先做<code>git fetch</code>，再做<code>git merge</code>。</p>
+<blockquote>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git fetch origin</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> git merge origin/next</span></span><br></pre></td></tr></table></figure>
+</blockquote>
+<p>在某些场合，Git会自动在本地分支与远程分支之间，建立一种追踪关系（tracking）。比如，在<code>git clone</code>的时候，所有本地分支默认与远程主机的同名分支，建立追踪关系，也就是说，本地的<code>master</code>分支自动”追踪”<code>origin/master</code>分支。</p>
+<p>Git也允许手动建立追踪关系。</p>
+<blockquote>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git branch --set-upstream master origin/next</span><br></pre></td></tr></table></figure>
+</blockquote>
+<p>上面命令指定<code>master</code>分支追踪<code>origin/next</code>分支。</p>
+<p>如果当前分支与远程分支存在追踪关系，<code>git pull</code>就可以省略远程分支名。</p>
+<blockquote>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git pull origin</span></span><br></pre></td></tr></table></figure>
+</blockquote>
+<p>上面命令表示，本地的当前分支自动与对应的<code>origin</code>主机”追踪分支”（remote-tracking branch）进行合并。</p>
+<p>如果当前分支只有一个追踪分支，连远程主机名都可以省略。</p>
+<blockquote>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git pull</span></span><br></pre></td></tr></table></figure>
+</blockquote>
+<p>上面命令表示，当前分支自动与唯一一个追踪分支进行合并。</p>
+<p>如果合并需要采用rebase模式，可以使用<code>--rebase</code>选项。</p>
+<blockquote>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git pull --rebase &lt;远程主机名&gt; &lt;远程分支名&gt;:&lt;本地分支名&gt;</span></span><br></pre></td></tr></table></figure>
+</blockquote>
+<p>如果远程主机删除了某个分支，默认情况下，<code>git pull</code> 不会在拉取远程分支的时候，删除对应的本地分支。这是为了防止，由于其他人操作了远程主机，导致<code>git pull</code>不知不觉删除了本地分支。</p>
+<p>但是，你可以改变这个行为，加上参数 <code>-p</code> 就会在本地删除远程已经删除的分支。</p>
+<blockquote>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git pull -p</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 等同于下面的命令</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> git fetch --prune origin </span></span><br><span class="line"><span class="meta">$</span><span class="bash"> git fetch -p</span></span><br></pre></td></tr></table></figure>
+</blockquote>
+<h3 id="git-push"><a href="#git-push" class="headerlink" title="git push"></a>git push</h3><p><code>git push</code>命令用于将本地分支的更新，推送到远程主机。它的格式与<code>git pull</code>命令相仿。</p>
+<blockquote>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git push &lt;远程主机名&gt; &lt;本地分支名&gt;:&lt;远程分支名&gt;</span></span><br></pre></td></tr></table></figure>
+</blockquote>
+<p>注意，分支推送顺序的写法是&lt;来源地&gt;:&lt;目的地&gt;，所以<code>git pull</code>是&lt;远程分支&gt;:&lt;本地分支&gt;，而<code>git push</code>是&lt;本地分支&gt;:&lt;远程分支&gt;。</p>
+<p>如果省略远程分支名，则表示将本地分支推送与之存在”追踪关系”的远程分支（通常两者同名），如果该远程分支不存在，则会被新建。</p>
+<blockquote>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git push origin master</span></span><br></pre></td></tr></table></figure>
+</blockquote>
+<p>上面命令表示，将本地的<code>master</code>分支推送到<code>origin</code>主机的<code>master</code>分支。如果后者不存在，则会被新建。</p>
+<p>如果省略本地分支名，则表示删除指定的远程分支，因为这等同于推送一个空的本地分支到远程分支。</p>
+<blockquote>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git push origin :master</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 等同于</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> git push origin --delete master</span></span><br></pre></td></tr></table></figure>
+</blockquote>
+<p>上面命令表示删除<code>origin</code>主机的<code>master</code>分支。</p>
+<p>如果当前分支与远程分支之间存在追踪关系，则本地分支和远程分支都可以省略。</p>
+<blockquote>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git push origin</span></span><br></pre></td></tr></table></figure>
+</blockquote>
+<p>上面命令表示，将当前分支推送到<code>origin</code>主机的对应分支。</p>
+<p>如果当前分支只有一个追踪分支，那么主机名都可以省略。</p>
+<blockquote>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git push</span></span><br></pre></td></tr></table></figure>
+</blockquote>
+<p>如果当前分支与多个主机存在追踪关系，则可以使用<code>-u</code>选项指定一个默认主机，这样后面就可以不加任何参数使用<code>git push</code>。</p>
+<blockquote>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git push -u origin master</span></span><br></pre></td></tr></table></figure>
+</blockquote>
+<p>上面命令将本地的<code>master</code>分支推送到<code>origin</code>主机，同时指定<code>origin</code>为默认主机，后面就可以不加任何参数使用<code>git push</code>了。</p>
+<p>不带任何参数的<code>git push</code>，默认只推送当前分支，这叫做simple方式。此外，还有一种matching方式，会推送所有有对应的远程分支的本地分支。Git 2.0版本之前，默认采用matching方法，现在改为默认采用simple方式。如果要修改这个设置，可以采用<code>git config</code>命令。</p>
+<blockquote>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git config --global push.default matching</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 或者</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> git config --global push.default simple</span></span><br></pre></td></tr></table></figure>
+</blockquote>
+<p>还有一种情况，就是不管是否存在对应的远程分支，将本地的所有分支都推送到远程主机，这时需要使用<code>--all</code>选项。</p>
+<blockquote>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git push --all origin</span></span><br></pre></td></tr></table></figure>
+</blockquote>
+<p>上面命令表示，将所有本地分支都推送到<code>origin</code>主机。</p>
+<p>如果远程主机的版本比本地版本更新，推送时Git会报错，要求先在本地做<code>git pull</code>合并差异，然后再推送到远程主机。这时，如果你一定要推送，可以使用<code>--force</code>选项。</p>
+<blockquote>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git push --force origin </span></span><br></pre></td></tr></table></figure>
+</blockquote>
+<p>上面命令使用<code>--force</code>选项，结果导致远程主机上更新的版本被覆盖。除非你很确定要这样做，否则应该尽量避免使用<code>--force</code>选项。</p>
+<p>最后，<code>git push</code>不会推送标签（tag），除非使用<code>--tags</code>选项。</p>
+<blockquote>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git push origin --tags</span></span><br></pre></td></tr></table></figure>
+
+</blockquote>
+]]></content>
+      <categories>
+        <category>代码管理</category>
+        <category>git</category>
+      </categories>
+      <tags>
+        <tag>git</tag>
+        <tag>version control</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Java8学习笔记</title>
+    <url>/2020/08/28/Java8%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/</url>
+    <content><![CDATA[<h2 id="Java8-函数式接口−"><a href="#Java8-函数式接口−" class="headerlink" title="Java8 函数式接口−"></a>Java8 <strong>函数式接口</strong>−</h2><p>函数式接口(Functional Interface)就是一个有且仅有一个抽象方法，但是可以有多个非抽象方法的接口。函数式接口可以被隐式转换为 lambda 表达式。</p>
+<a id="more"></a>
+
+<p><code>@FunctionalInterface</code>注解</p>
+<ol>
+<li><p>该注解只能标记在”有且仅有一个抽象方法”的接口上。</p>
+</li>
+<li><p>JDK8接口中的静态方法和默认方法，都不算是抽象方法。</p>
+</li>
+<li><p>接口默认继承Java.lang.Object，所以如果接口显示声明覆盖了Object中方法，那么也不算抽象方法。</p>
+</li>
+<li><p>该注解不是必须的，如果一个接口符合”函数式接口”定义，那么加不加该注解都没有影响。加上该注解能够更好地让编译器进行检查。如果编写的不是函数式接口，但是加上了@FunctionInterface，那么编译器会报错。</p>
+</li>
+<li><p>默认方法<strong>接口可以有实现方法，而且不需要实现类去实现其方法。</strong>目的是为了解决接口的修改与现有的实现不兼容的问题。</p>
+</li>
+</ol>
+<p><strong>常用内置函数式接口</strong></p>
+<p>java.uitl.function</p>
+<p><strong>Supplier</strong>供给型接口:产生数据</p>
+<p>无参数,有返回值</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@FunctionalInterface</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">Supplier</span>&lt;<span class="title">T</span>&gt; </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * Gets a result.</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span> a result</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function">T <span class="title">get</span><span class="params">()</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Consumer</strong>消费型接口:接收数据来使用</p>
+<p>有参数,无返回值</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@FunctionalInterface</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">Consumer</span>&lt;<span class="title">T</span>&gt; </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * Performs this operation on the given argument.</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> t the input argument</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">accept</span><span class="params">(T t)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Function</strong>加工型接口:得到一个数据返回另一个数据</p>
+<p>有参数,有返回值</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@FunctionalInterface</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">Function</span>&lt;<span class="title">T</span>, <span class="title">R</span>&gt; </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * Applies this function to the given argument.</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> t the function argument</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span> the function result</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function">R <span class="title">apply</span><span class="params">(T t)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Predicate</strong>断言,判断型接口</p>
+<p>有参数,返回true/false</p>
+<p>and与 or或  negate非(取反)</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@FunctionalInterface</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">Predicate</span>&lt;<span class="title">T</span>&gt; </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * Evaluates this predicate on the given argument.</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> t the input argument</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span> &#123;<span class="doctag">@code</span> true&#125; if the input argument matches the predicate,</span></span><br><span class="line"><span class="comment">     * otherwise &#123;<span class="doctag">@code</span> false&#125;</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line"> <span class="function"><span class="keyword">boolean</span> <span class="title">test</span><span class="params">(T t)</span></span>;</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="Lambda-表达式-−"><a href="#Lambda-表达式-−" class="headerlink" title="Lambda 表达式 −"></a><strong>Lambda 表达式</strong> −</h2><p> Lambda 允许把函数作为一个方法的参数（函数作为参数传递到方法中）。</p>
+<ol>
+<li><p>可选类型声明：不需要声明参数类型，编译器可以统一识别参数值。</p>
+</li>
+<li><p>可选的参数圆括号：一个参数无需定义圆括号，但多个参数需要定义圆括号。</p>
+</li>
+<li><p>可选的大括号：如果主体包含了一个语句，就不需要使用大括号。</p>
+</li>
+<li><p>可选的返回关键字：如果主体只有一个表达式返回值则编译器会自动返回值，大括号需要指定明表达式返回了一个数值。</p>
+</li>
+<li><p>lambda表达式的重点是延迟执行，如果需要直接执行，无需把它包装在lambda表达式当中。之所以希望以后执行原因如下：</p>
+<pre><code>在一个单独的线程中运行代码；
+多次运行代码；
+在算法的适当位置运行代码（排序中的比较操作）；
+发生某种情况是运行代码（点击按钮，数据到达）；
+在必要时运行代码；</code></pre>
+</li>
+</ol>
+<p><strong>优点 : lambda表达式让我们可以把一个方法当成参数传递进另一个方法，顶替匿名内部类消除了样板式代码。并让我们的代码看起来更加简洁、干净。</strong></p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * lambda表达式对集合进行迭代</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">iterTest</span><span class="params">()</span></span>&#123;</span><br><span class="line">    List&lt;String&gt; languages = Arrays.asList(<span class="string">&quot;java&quot;</span>,<span class="string">&quot;scala&quot;</span>,<span class="string">&quot;python&quot;</span>);</span><br><span class="line">    <span class="comment">//java8之前</span></span><br><span class="line">    <span class="keyword">for</span> (String each : languages)&#123;</span><br><span class="line">        System.out.println(each);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//java8之后</span></span><br><span class="line">    <span class="comment">//languages.forEach(x -&gt; System.out.println(x));</span></span><br><span class="line">    languages.forEach(System.out::println);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 实现setInterval</span></span><br><span class="line"><span class="comment"> * 每间隔指定的时间一次, 做些什么(也就是传入的A.func)</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Test1</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">        <span class="keyword">new</span> Test1().setInterval(() -&gt; System.out.println(Math.random()),<span class="number">1000L</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setInterval</span><span class="params">(A a,<span class="keyword">long</span> time)</span> <span class="keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">        <span class="keyword">new</span> Thread(() -&gt; &#123;<span class="comment">//在一个新的线程中执行防止线程阻塞</span></span><br><span class="line">            <span class="keyword">while</span> (<span class="keyword">true</span>)&#123;</span><br><span class="line">                <span class="keyword">try</span> &#123;</span><br><span class="line">                    Thread.sleep(time);</span><br><span class="line">                &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">                    e.printStackTrace();</span><br><span class="line">                &#125;</span><br><span class="line">                a.func();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;).start();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">interface</span> <span class="title">A</span></span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">func</span><span class="params">()</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="方法引用-−"><a href="#方法引用-−" class="headerlink" title="方法引用 −"></a>方法引用 −</h2><p>方法引用提供了非常有用的语法，可以直接引用已有Java类或对象（实例）的方法或构造器。与lambda联合使用，方法引用可以使语言的构造更紧凑简洁，减少冗余代码。</p>
+<p>​    <strong>如果Lambda表达式所要实现的代码,在其他地方已经存在相同方案,那么就可以使用方法引用</strong></p>
+<p>​    <strong>方法引用就是让指定方法去实现接口的抽象方法</strong></p>
+<p>​    <strong>常见引用方式</strong></p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">instanceName::methodName 对象::方法名</span><br><span class="line">ClassName::staticMethodName 类名::静态方法</span><br><span class="line">ClassName::methodName 类名::普通方法</span><br><span class="line">ClassName::new 类名::new (构造器)</span><br><span class="line">TypeName[]::new String[]::new(数组的构造器)</span><br></pre></td></tr></table></figure>
+
+<p><strong>注意:引用的方法要和接口中抽象方法的参数一致,当接口的抽象方法有返回值时,被引用的方法也必须有返回值</strong></p>
+<p> Java 中 4 种不同方法的引用</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 对象::成员方法</span></span><br><span class="line"><span class="comment">     * 打印当前时间</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="meta">@Test</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">test1</span><span class="params">()</span></span>&#123;</span><br><span class="line">        Date now = <span class="keyword">new</span> Date();</span><br><span class="line">        Supplier&lt;Long&gt; supplier = now::getTime;</span><br><span class="line">        Long aLong = supplier.get();</span><br><span class="line">        System.out.println(aLong);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 类名::静态方法</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="meta">@Test</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">test2</span><span class="params">()</span></span>&#123;</span><br><span class="line">        Supplier&lt;Long&gt; supplier = System::currentTimeMillis;</span><br><span class="line">        Long aLong = supplier.get();</span><br><span class="line">        System.out.println(aLong);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     *  类名::实例方法</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="meta">@Test</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">test3</span><span class="params">()</span></span>&#123;</span><br><span class="line">        <span class="comment">//求字符串长度</span></span><br><span class="line">        Function&lt;String,Integer&gt; func = String::length;</span><br><span class="line">        Integer length = func.apply(<span class="string">&quot;53º 40,6 N 008º 06,3 E&quot;</span>);</span><br><span class="line">        System.out.println(length);</span><br><span class="line">        </span><br><span class="line">        <span class="comment">//截取字符串</span></span><br><span class="line">        <span class="comment">/*BiFunction&lt;String,Integer,String&gt; func2 = (String str,Integer index) -&gt; &#123;</span></span><br><span class="line"><span class="comment">            //引用实例方法将第一个参数作为被引用方法的调用者</span></span><br><span class="line"><span class="comment">          return str.substring(index);</span></span><br><span class="line"><span class="comment">        &#125;;*/</span></span><br><span class="line">        BiFunction&lt;String,Integer,String&gt; func2 = String::substring;</span><br><span class="line">        String s = func2.apply(<span class="string">&quot;静谧于心，慎独于学&quot;</span>,<span class="number">5</span>);</span><br><span class="line">        System.out.println(s);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 类名::new构造器</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="meta">@Test</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">test4</span><span class="params">()</span></span>&#123;</span><br><span class="line">        <span class="comment">//引用无参构造</span></span><br><span class="line">        Supplier&lt;Person&gt; supplier = Person::<span class="keyword">new</span>;</span><br><span class="line">        Person p1 = supplier.get();</span><br><span class="line">        System.out.println(p1);</span><br><span class="line">        <span class="comment">//引用有参构造</span></span><br><span class="line">        BiFunction&lt;String,Integer,Person&gt; func = Person::<span class="keyword">new</span>;</span><br><span class="line">        Person p2 = func.apply(<span class="string">&quot;edc&quot;</span>, <span class="number">40</span>);</span><br><span class="line">        System.out.println(p2);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 类型[]::new</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="meta">@Test</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">test5</span><span class="params">()</span></span>&#123;</span><br><span class="line">        Function&lt;Integer,<span class="keyword">int</span>[]&gt; func = <span class="keyword">int</span>[]::<span class="keyword">new</span>;</span><br><span class="line">        <span class="keyword">int</span>[] arr = func.apply(<span class="number">10</span>);</span><br><span class="line">        System.out.println(Arrays.toString(arr));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="Stream-API-−"><a href="#Stream-API-−" class="headerlink" title="Stream API −"></a><strong>Stream API</strong> −</h2><p>新添加的Stream API（java.util.stream）<strong>以一种声明的方式处理数据。</strong> 把真正的函数式编程风格引入到Java中。</p>
+<ol>
+<li><p>Stream 使用一种类似用 SQL 语句从数据库查询数据的直观方式来提供一种对 Java 集合运算和表达的高阶抽象。</p>
+</li>
+<li><p>Stream API可以极大提高Java程序员的生产力，让程序员写出高效率、干净、简洁的代码。</p>
+</li>
+<li><p>这种风格将要处理的元素集合看作一种流， 流在管道中传输， 并且可以在管道的节点上进行处理， 比如筛选， 排序，聚合等。</p>
+</li>
+<li><p>元素流在管道中经过中间操作（intermediate operation）的处理，最后由最终操作(terminal operation)得到前面处理的结果。</p>
+</li>
+</ol>
+<p><strong>什么是stream?</strong></p>
+<ul>
+<li>Stream（流）是一个来自数据源的元素队列并支持聚合操作。</li>
+<li>元素是特定类型的对象，形成一个队列。Java中的Stream并不会存储元素，而是按需计算。</li>
+<li>数据源 流的来源。可以是集合，数组，I/O channel， 产生器generator 等。</li>
+<li>聚合操作 类似SQL语句一样的操作， 比如filter, map, reduce, find, match, sorted等。</li>
+</ul>
+<p>和以前的Collection操作不同， Stream操作还有两个基础的特征：</p>
+<ul>
+<li><p><strong>Pipelining</strong>: 中间操作都会返回流对象本身。这样多个操作可以串联成一个管道， 如同流式风格（fluent style）。这样做可以对操作进行优化， 比如延迟执行(laziness)和短路( short-circuiting)。</p>
+</li>
+<li><p><strong>内部迭代</strong>：以前对集合遍历都是通过Iterator或者For-Each的方式, 显式的在集合外部进行迭代， 这叫做外部迭代。Stream提供了内部迭代的方式， 通过访问者模式(Visitor)实现。</p>
+</li>
+</ul>
+<p><strong>在 Java 8 中, 集合生成流的方式：</strong></p>
+<p><strong>stream()</strong> − 通过集合接口默认方法为集合创建串行流。</p>
+<p><strong>Stream.of()</strong>- Stream的默认方法创建流</p>
+<p><strong>parallelStream()</strong> − 为集合创建并行流。</p>
+<p><img src="https://i.loli.net/2020/07/15/eqf4Q5r9a8XSTvt.png" alt="image-20191230155712192"></p>
+<p> <strong>API</strong>:</p>
+<p><strong>forEach()</strong> 用来迭代流中的每个数据,以下代码片段使用 forEach 输出了10个随机数：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">Random random = <span class="keyword">new</span> Random();</span><br><span class="line">random.ints().limit(<span class="number">10</span>).forEach(System.out::println);</span><br></pre></td></tr></table></figure>
+
+<p><strong>count()</strong> 方法用来统计元素的个数</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">ArrayList&lt;String&gt; list = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line">Collections.addAll(list,<span class="string">&quot;斯嘉丽.约翰逊&quot;</span>,<span class="string">&quot;迪丽热巴&quot;</span>,<span class="string">&quot;王祖贤&quot;</span>,<span class="string">&quot;李子柒&quot;</span>);</span><br><span class="line"><span class="keyword">long</span> count = list.stream().count();</span><br></pre></td></tr></table></figure>
+
+<p><strong>limit()</strong> 方法用于获取指定数量的流,以下代码片段使用 limit 方法打印出 10 条数据：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">Random random = <span class="keyword">new</span> Random();</span><br><span class="line">random.ints().limit(<span class="number">10</span>).forEach(System.out::println);</span><br></pre></td></tr></table></figure>
+
+<p> <strong>skip()</strong> 方法用于跳过前N个元素获取后面的元素</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">ArrayList&lt;String&gt; list = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line">Collections.addAll(list,<span class="string">&quot;斯嘉丽.约翰逊&quot;</span>,<span class="string">&quot;迪丽热巴&quot;</span>,<span class="string">&quot;王祖贤&quot;</span>,<span class="string">&quot;李子柒&quot;</span>);</span><br><span class="line">list.stream().skip(<span class="number">2</span>).forEach(System.out::println);</span><br></pre></td></tr></table></figure>
+
+<p><strong>map()</strong> 方法用于映射每个元素到对应的结果, 以下代码片段使用 map 输出了元素对应的平方数：</p>
+<p><strong>distinct()</strong> 去重 </p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">List&lt;Integer&gt; numbers = Arrays.asList(<span class="number">3</span>,<span class="number">4</span>,<span class="number">2</span>,<span class="number">1</span>,<span class="number">5</span>,<span class="number">6</span>,<span class="number">7</span>);</span><br><span class="line"><span class="comment">//获取对应的平方数</span></span><br><span class="line">List&lt;Integer&gt; squaresList = numbers.stream().map(i -&gt; i*i).distinct().collect(Collectors.toList());</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">//map()可以将一种类型的Stream流转换为另一种类型的Stream流</span></span><br><span class="line"><span class="comment">//将Stream&lt;String&gt;转换为Stream&lt;Integer&gt;</span></span><br><span class="line">Stream&lt;String&gt; stringStream = Stream.of(<span class="string">&quot;11&quot;</span>, <span class="string">&quot;22&quot;</span>, <span class="string">&quot;33&quot;</span>);</span><br><span class="line">Stream&lt;Integer&gt; integerStream = stringStream.map(Integer::parseInt);</span><br></pre></td></tr></table></figure>
+
+<p><strong>distinct()</strong> 去重, 需要实现hascCode和equase方法</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">//为String,int,自定义对象集合去重</span></span><br><span class="line">        Stream&lt;String&gt; stream1 = Stream.of(<span class="string">&quot;aa&quot;</span>, <span class="string">&quot;bb&quot;</span>, <span class="string">&quot;cc&quot;</span>, <span class="string">&quot;aa&quot;</span>, <span class="string">&quot;cc&quot;</span>);</span><br><span class="line">        stream1.distinct().forEach(System.out::println);</span><br><span class="line"></span><br><span class="line">        Stream&lt;Integer&gt; stream2 = Stream.of(<span class="number">11</span>, <span class="number">22</span>, <span class="number">33</span>, <span class="number">11</span>, <span class="number">22</span>, <span class="number">33</span>);</span><br><span class="line">        stream2.distinct().forEach(System.out::println);</span><br><span class="line"></span><br><span class="line">        <span class="comment">//对象需要重写hascCode和equase方法</span></span><br><span class="line">        Stream&lt;Person&gt; personStream = Stream.of(</span><br><span class="line">                <span class="keyword">new</span> Person(<span class="string">&quot;李清照&quot;</span>, <span class="number">18</span>),</span><br><span class="line">                <span class="keyword">new</span> Person(<span class="string">&quot;李白&quot;</span>, <span class="number">30</span>),</span><br><span class="line">                <span class="keyword">new</span> Person(<span class="string">&quot;李白&quot;</span>, <span class="number">30</span>)</span><br><span class="line">        );</span><br><span class="line">        personStream.distinct().forEach(System.out::println);</span><br></pre></td></tr></table></figure>
+
+<p><strong>reduce()</strong> 将集合元素合为一个数据</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">//T reduce(T identity,BinaryOperator&lt;T&gt; accumulator)</span></span><br><span class="line">      <span class="comment">//T identity 默认值</span></span><br><span class="line">      <span class="comment">//BinaryOperator&lt;T&gt; accumulator 继承BiFunction 对数据进行处理的方式</span></span><br><span class="line">      <span class="comment">//Integer reduce = Stream.of(5, 6, 7, 8, 9).reduce(0, Integer::sum);</span></span><br><span class="line">      Integer reduce = Stream.of(<span class="number">5</span>, <span class="number">6</span>, <span class="number">7</span>, <span class="number">8</span>, <span class="number">9</span>).reduce(<span class="number">0</span>, (x, y) -&gt; &#123;</span><br><span class="line">          System.out.println(<span class="string">&quot;x=&quot;</span> + x + <span class="string">&quot;,y=&quot;</span> + y);</span><br><span class="line">          <span class="keyword">return</span> x + y;</span><br><span class="line">      &#125;);</span><br><span class="line">      System.out.println(reduce);</span><br></pre></td></tr></table></figure>
+
+<p><strong>filter()</strong> 方法用于通过设置的条件过滤出元素。以下代码片段使用 filter 方法过滤出空字符串：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">List&lt;String&gt; strings = Arrays.asList(<span class="string">&quot;hzy&quot;</span>,<span class="string">&quot;&quot;</span>,<span class="string">&quot;edc&quot;</span>);</span><br><span class="line"><span class="comment">//获取空字符串的数量</span></span><br><span class="line"><span class="keyword">long</span> count = strings.stream().filter(string -&gt; string.isEmpty()).count();</span><br></pre></td></tr></table></figure>
+
+<p><strong>sorted</strong> 方法用于对流进行排序。以下代码片段使用 sorted 方法对输出的 10 个随机数进行排序：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">Random random = <span class="keyword">new</span> Random();</span><br><span class="line">random.ints().limit(<span class="number">10</span>).sorted().forEach(System.out::println);</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">//sorted(Comparator&lt;? super T&gt; comparator)指定排序规则</span></span><br><span class="line">Stream&lt;Integer&gt; integerStream = Stream.of(<span class="number">33</span>, <span class="number">22</span>, <span class="number">11</span>, <span class="number">55</span>, <span class="number">88</span>, <span class="number">99</span>);</span><br><span class="line">integerStream.sorted((Integer i1,Integer i2) -&gt; i2 - i1<span class="comment">//降序</span></span><br><span class="line">        ).forEach(System.out::println);</span><br></pre></td></tr></table></figure>
+
+<p>**match()**查看元素是否满足指定条件</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">Stream&lt;Integer&gt; stream = Stream.of(<span class="number">5</span>, <span class="number">3</span>, <span class="number">6</span>, <span class="number">1</span>);</span><br><span class="line"><span class="keyword">boolean</span> b = stream.allMatch((i -&gt; i &gt; <span class="number">0</span>));<span class="comment">//匹配所有元素,都满足条件true</span></span><br><span class="line"><span class="keyword">boolean</span> b1 = stream.anyMatch(i -&gt; i &gt; <span class="number">5</span>);<span class="comment">//匹配部分元素,有一个满足条件即true</span></span><br><span class="line"><span class="keyword">boolean</span> b2 = stream.noneMatch(i -&gt; i &lt; <span class="number">0</span>);<span class="comment">//匹配所有元素,都不满足条件为true</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>find()</strong></p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">//find()找到第一个元素</span></span><br><span class="line">      Stream&lt;Integer&gt; stream = Stream.of(<span class="number">33</span>, <span class="number">22</span>, <span class="number">11</span>);</span><br><span class="line">      Optional&lt;Integer&gt; first = stream.findFirst();</span><br><span class="line">      System.out.println(first.get());</span><br></pre></td></tr></table></figure>
+
+<p><strong>并行(parallel)程序</strong></p>
+<p><strong>parallelStream</strong> 是流并行处理程序的代替方法。以下实例我们使用 parallelStream 来输出空字符串的数量：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">List&lt;String&gt; strings = Arrays.asList(<span class="string">&quot;hzy&quot;</span>,<span class="string">&quot;&quot;</span>,<span class="string">&quot;edc&quot;</span>,<span class="string">&quot;&quot;</span>);</span><br><span class="line"><span class="comment">//获取空字符串的数量</span></span><br><span class="line"><span class="keyword">long</span> count  = strings.parallelStream().filter(string -&gt; string.isEmpty()).count();</span><br></pre></td></tr></table></figure>
+
+<p>Collectors 结合 collect()方法后使用 Collectors.joining(String 分隔符)方法变为分隔符分隔的字符串， Collectors.toList()方法变为集合：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">List&lt;String&gt; strings = Arrays.asList(<span class="string">&quot;abc&quot;</span>,<span class="string">&quot;&quot;</span>,<span class="string">&quot;&quot;</span>,<span class="string">&quot;edc&quot;</span>,<span class="string">&quot;edv&quot;</span>,<span class="string">&quot;jax&quot;</span>);</span><br><span class="line">List&lt;String&gt; filtered = strings.stream().filter(string -&gt; !string.isEmpty()).collect(Collectors.toList());</span><br><span class="line">System.out.println(<span class="string">&quot;筛选列表: &quot;</span> + filtered);</span><br><span class="line">String mergedString = strings.stream().filter(string -&gt; !string.isEmpty()).collect(Collectors.joining(<span class="string">&quot;:&quot;</span>));</span><br><span class="line">System.out.println(<span class="string">&quot;合并字符串: &quot;</span> + mergedString);</span><br></pre></td></tr></table></figure>
+
+<h2 id="Date-Time-API-−"><a href="#Date-Time-API-−" class="headerlink" title="Date Time API −"></a><strong>Date Time API</strong> −</h2><p> 加强对日期与时间的处理。</p>
+<p>因为Java的Date，Calendar类型使用起来并不是很方便，而且Date类(据说)有着线程不安全等诸多弊端。同时若不进行封装，会在每次使用时特别麻烦。于是Java8推出了线程安全、简易、高可靠的时间包。并且数据库中也支持LocalDateTime类型，在数据存储时候使时间变得简单。Java8这次新推出的包括三个相关的时间类型：LocalDateTime年月日十分秒；LocalDate日期；LocalTime时间；三个包的方法都差不多。</p>
+<p>常用API:</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">//获取当前时间的LocalDateTime对象</span></span><br><span class="line">LocalDateTime.now();</span><br><span class="line">String now = DateTimeFormatter.ofPattern(<span class="string">&quot;yyyy-MM-dd HH:mm:ss&quot;</span>).format(LocalDateTime.now());</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment">//根据年月日构建LocalDateTime</span></span><br><span class="line">LocalDateTime.of(); </span><br><span class="line"></span><br><span class="line"><span class="comment">//比较日期先后</span></span><br><span class="line">LocalDateTime.now().isBefore(),</span><br><span class="line">LocalDateTime.now().isAfter(),</span><br></pre></td></tr></table></figure>
+
+<h2 id="Optional-类-−"><a href="#Optional-类-−" class="headerlink" title="Optional 类 −"></a><strong>Optional 类</strong> −</h2><p> Optional 类已经成为 Java 8 类库的一部分，用来解决空指针异常。</p>
+<p> <strong>空指针异常是一个运行时异常，对于这一类异常，如果没有明确的处理策略，那么最佳实践在于让程序早点挂掉，但是很多场景下，不是开发人员没有具体的处理策略，而是根本没有意识到空指针异常的存在。</strong></p>
+<p>1). 直观感受<br>假设我们需要返回一个字符串的长度，如果不借助第三方工具类，我们需要调用str.length()方法：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">if</span>(<span class="keyword">null</span> == str) &#123; <span class="comment">// 空指针判定</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">return</span> str.length();</span><br></pre></td></tr></table></figure>
+
+
+<p>如果采用Optional类，实现如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">return</span> Optional.ofNullable(str).map(String::length).orElse(<span class="number">0</span>)</span><br></pre></td></tr></table></figure>
+
+<p>2). 基本使用</p>
+<ol>
+<li>对象创建</li>
+</ol>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">Optional&lt;String&gt; optStr = Optional.empty();</span><br></pre></td></tr></table></figure>
+
+<p>上面的示例代码调用empty()方法创建了一个空的Optional对象型。</p>
+<p>上面的示例代码调用empty()方法创建了一个空的Optional对象型。</p>
+<p>创建对象：不允许为空<br>Optional提供了方法of()用于创建非空对象，该方法要求传入的参数不能为空，否则抛NullPointException，示例如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 当str为null的时候，将抛出NullPointException</span></span><br><span class="line">Optional&lt;String&gt; optStr = Optional.of(str); </span><br></pre></td></tr></table></figure>
+
+<ol start="2">
+<li>创建对象：允许为空<br> 如果不能确定传入的参数是否存在null值的可能性，则可以用Optional的ofNullable()方法创建对象，如果入参为null，则创建一个空对象。示例如下：</li>
+</ol>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 如果str是null，则创建一个空对象</span></span><br><span class="line">Optional&lt;String&gt; optStr = Optional.ofNullable(str); </span><br></pre></td></tr></table></figure>
+
+<p>3.流式处理<br>流式处理也是java8给我们带来的一个重量级新特性，让我们对集合的操作变得更加简洁和高效。</p>
+<p>这里Optional也提供了两个基本的流式处理：映射和过滤。</p>
+<p>为了演示，我们设计了一个User类，如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">User</span> </span>&#123;</span><br><span class="line"></span><br><span class="line"><span class="comment">/** 用户编号 */</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">long</span> id;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> String name;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">int</span> age;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> Optional&lt;Long&gt; phone;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> Optional&lt;String&gt; email;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="title">User</span><span class="params">(String name, <span class="keyword">int</span> age)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line"><span class="keyword">this</span>.name = name;</span><br><span class="line"></span><br><span class="line"><span class="keyword">this</span>.age = age;</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 省略setter和getter</span></span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>映射：map与flatMap</strong></p>
+<p><strong>映射是将输入转换成另外一种形式的输出的操作</strong></p>
+<p>比如前面例子中，我们输入字符串，而输出的是字符串的长度，这就是一种映射，我们利用方法map()得以实现。假设我们希望获得一个人的姓名，那么我们可以如下实现：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">String name = Optional.ofNullable(user).map(User::getName).orElse(<span class="string">&quot;no name&quot;</span>);</span><br></pre></td></tr></table></figure>
+
+<p>这样当入参user不为空的时候则返回其name，否则返回no name</p>
+<p>如果我们希望通过上面方式得到phone或email，利用上面的方式则行不通了，因为map之后返回的是Optional，我们把这种称为Optional嵌套，我们必须在map一次才能拿到我们想要的结果：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">long</span> phone = optUser.map(User::getPhone).map(Optional::get).orElse(-<span class="number">1L</span>);</span><br></pre></td></tr></table></figure>
+
+<p>其实这个时候，更好的方式是利用flatMap，一步拿到我们想要的结果：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">long</span> phone = optUser.flatMap(User::getPhone).orElse(-<span class="number">1L</span>);</span><br></pre></td></tr></table></figure>
+
+<p><strong>过滤：fliter</strong></p>
+<p><strong>fliter，顾名思义是过滤的操作，我们可以将过滤操作做为参数传递给该方法，从而实现过滤目的</strong></p>
+<p>假如我们希望筛选18周岁以上的成年人，则可以实现如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">optUser.filter(u -&gt; u.getAge() &gt;= <span class="number">18</span>).ifPresent(u -&gt; System.out.println(<span class="string">&quot;Adult:&quot;</span> + u));</span><br></pre></td></tr></table></figure>
+
+<p>4.默认行为<br>默认行为是当Optional为不满足条件时所执行的操作，比如在上面的例子中我们使用的orElse()就是一个默认操作，用于在Optional对象为空时执行特定操作，当然也有一些默认操作是当满足条件的对象存在时执行的操作。</p>
+<p>get()</p>
+<p>get用于获取变量的值，但是当变量不存在时则会抛出NoSuchElementException，所以如果不确定变量是否存在，则不建议使用</p>
+<p>orElse(Tother)</p>
+<p>当Optional的变量不满足给定条件时，则执行orElse，比如前面当str为null时，返回0。</p>
+<p>orElseGet(Supplier&lt;? extends X&gt; expectionSupplier)</p>
+<p>如果条件不成立时，需要执行相对复杂的逻辑，而不是简单的返回操作，则可以使用orElseGet实现：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">long</span> phone = optUser.map(User::getPhone).map(Optional::get).orElseGet(() -&gt; &#123;</span><br><span class="line"></span><br><span class="line"><span class="comment">// do something here</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">return</span> -<span class="number">1L</span>;</span><br><span class="line"></span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+<p>orElseThrow(Supplier&lt;? extends X&gt; expectionSupplier)</p>
+<p>与get()方法类似，都是在不满足条件时返回异常，不过这里我们可以指定返回的异常类型。</p>
+<p>ifPresent(Consumer&lt;? super T&gt;)</p>
+<p>当满足条件时执行传入的参数化操作。</p>
+<p><strong>注意事项</strong></p>
+<p>Optional是一个final类，未实现任何接口，所以当我们在利用该类包装定义类的属性的时候，如果我们定义的类有序列化的需求，那么因为Optional没有实现Serializable接口，这个时候执行序列化操作就会有问题：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">User</span> <span class="keyword">implements</span> <span class="title">Serializable</span></span>&#123;</span><br><span class="line"></span><br><span class="line"><span class="comment">/** 用户编号 */</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">long</span> id;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> String name;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">int</span> age;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> Optional&lt;Long&gt; phone;  <span class="comment">// 不能序列化</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> Optional&lt;String&gt; email;  <span class="comment">// 不能序列化</span></span><br><span class="line"></span><br><span class="line">不过我们可以采用如下替换策略：</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">long</span> phone;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> Optional&lt;Long&gt; <span class="title">getPhone</span><span class="params">()</span> </span>&#123;</span><br><span class="line"></span><br><span class="line"><span class="keyword">return</span> Optional.ofNullable(<span class="keyword">this</span>.phone);</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="使用示例"><a href="#使用示例" class="headerlink" title="使用示例"></a>使用示例</h2><h3 id="将一个字符串转为小写-再转为大写"><a href="#将一个字符串转为小写-再转为大写" class="headerlink" title="将一个字符串转为小写,再转为大写"></a>将一个字符串转为小写,再转为大写</h3><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> java.util.function.Consumer;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ConsumerDemo</span> </span>&#123;</span><br><span class="line">    <span class="comment">//将一个字符串转为小写,再转为大写</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        printHello((str) -&gt; &#123;</span><br><span class="line">            System.out.println(str.toLowerCase());</span><br><span class="line">        &#125;,(str) -&gt; &#123;</span><br><span class="line">            System.out.println(str.toUpperCase());</span><br><span class="line">        &#125;);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">printHello</span><span class="params">(Consumer&lt;String&gt; consumer1,Consumer&lt;String&gt; consumer2)</span></span>&#123;</span><br><span class="line">        String str =<span class="string">&quot;HELLO WORLD&quot;</span>;</span><br><span class="line">        consumer1.andThen(consumer2).accept(str);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="将字符串转为数字-再乘5"><a href="#将字符串转为数字-再乘5" class="headerlink" title="将字符串转为数字,再乘5"></a>将字符串转为数字,再乘5</h3><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> java.util.function.Function;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">FunctionDemo</span> </span>&#123;</span><br><span class="line">    <span class="comment">//将字符串转为数字,再乘5</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        getNumber((String str) -&gt; &#123;</span><br><span class="line">            <span class="keyword">int</span> i = Integer.parseInt(str);</span><br><span class="line">            <span class="keyword">return</span> i;</span><br><span class="line">        &#125;,(i) -&gt; &#123;</span><br><span class="line">            <span class="keyword">return</span> i*<span class="number">5</span>;</span><br><span class="line">        &#125;);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">getNumber</span><span class="params">(Function&lt;String,Integer&gt; function1,Function&lt;Integer,Integer&gt; function2)</span></span>&#123;</span><br><span class="line">        Integer num = function1.andThen(function2).apply(<span class="string">&quot;10&quot;</span>);</span><br><span class="line">        System.out.println(num);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="StreamAPI"><a href="#StreamAPI" class="headerlink" title="StreamAPI"></a>StreamAPI</h3><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">testForEach</span><span class="params">()</span></span>&#123;</span><br><span class="line">    <span class="comment">//forEach’ 来迭代流中的每个数据,以下代码片段使用 forEach 输出了10个随机数：</span></span><br><span class="line">    Random random = <span class="keyword">new</span> Random();</span><br><span class="line">    random.ints().limit(<span class="number">10</span>).forEach(System.out::println);</span><br><span class="line">&#125;</span><br><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">testLimit</span><span class="params">()</span></span>&#123;</span><br><span class="line">    <span class="comment">//limit() 方法用于获取指定数量的流,以下代码片段使用 limit 方法打印出 10 条数据：</span></span><br><span class="line">    Random random = <span class="keyword">new</span> Random();</span><br><span class="line">    random.ints().limit(<span class="number">10</span>).forEach(System.out::println);</span><br><span class="line">&#125;</span><br><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">testMap</span><span class="params">()</span></span>&#123;</span><br><span class="line">    <span class="comment">//map() 方法用于映射每个元素到对应的结果, 以下代码片段使用 map 输出了元素对应的平方数：</span></span><br><span class="line">    List&lt;Integer&gt; numbers = Arrays.asList(<span class="number">3</span>,<span class="number">4</span>,<span class="number">2</span>,<span class="number">1</span>,<span class="number">5</span>,<span class="number">6</span>,<span class="number">7</span>);</span><br><span class="line">    <span class="comment">//获取对应的平方数</span></span><br><span class="line">    List&lt;Integer&gt; squaresList = numbers.stream().map(i -&gt; i*i).distinct().collect(Collectors.toList());</span><br><span class="line">&#125;</span><br><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">testFilter</span><span class="params">()</span></span>&#123;</span><br><span class="line">    <span class="comment">//filter() 方法用于通过设置的条件过滤出元素。以下代码片段使用 filter 方法过滤出空字符串：</span></span><br><span class="line">    List&lt;String&gt; strings = Arrays.asList(<span class="string">&quot;hzy&quot;</span>,<span class="string">&quot;&quot;</span>,<span class="string">&quot;edc&quot;</span>);</span><br><span class="line">    <span class="comment">//获取空字符串的数量</span></span><br><span class="line">    <span class="keyword">long</span> count = strings.stream().filter(string -&gt; string.isEmpty()).count();</span><br><span class="line">&#125;</span><br><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">testSorted</span><span class="params">()</span></span>&#123;</span><br><span class="line">    <span class="comment">//sorted 方法用于对流进行排序。以下代码片段使用 sorted 方法对输出的 10 个随机数进行排序：</span></span><br><span class="line">    Random random = <span class="keyword">new</span> Random();</span><br><span class="line">    random.ints().limit(<span class="number">10</span>).sorted().forEach(System.out::println);</span><br><span class="line">&#125;</span><br><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">testParallel</span><span class="params">()</span></span>&#123;</span><br><span class="line">    <span class="comment">//parallelStream 是流并行处理程序的代替方法</span></span><br><span class="line">    <span class="comment">//使用 parallelStream 来输出空字符串的数量：</span></span><br><span class="line">    List&lt;String&gt; strings = Arrays.asList(<span class="string">&quot;hzy&quot;</span>,<span class="string">&quot;&quot;</span>,<span class="string">&quot;edc&quot;</span>,<span class="string">&quot;&quot;</span>);</span><br><span class="line">    <span class="comment">//获取空字符串的数量</span></span><br><span class="line">    <span class="keyword">long</span> count  = strings.parallelStream().filter(string -&gt; string.isEmpty()).count();</span><br><span class="line">&#125;</span><br><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">testCollectors</span><span class="params">()</span></span>&#123;</span><br><span class="line">    <span class="comment">//Collectors 结合 collect()方法后使用 Collectors.joining(String 分隔符)方法变为分隔符分隔的字符串，</span></span><br><span class="line">    <span class="comment">// Collectors.toList()方法变为集合：</span></span><br><span class="line">    List&lt;String&gt; strings = Arrays.asList(<span class="string">&quot;abc&quot;</span>,<span class="string">&quot;&quot;</span>,<span class="string">&quot;&quot;</span>,<span class="string">&quot;edc&quot;</span>,<span class="string">&quot;edv&quot;</span>,<span class="string">&quot;jax&quot;</span>);</span><br><span class="line">    List&lt;String&gt; filtered = strings.stream().filter(string -&gt; !string.isEmpty()).collect(Collectors.toList());</span><br><span class="line">    System.out.println(<span class="string">&quot;筛选列表: &quot;</span> + filtered);</span><br><span class="line">    String mergedString = strings.stream().filter(string -&gt; !string.isEmpty()).collect(Collectors.joining(<span class="string">&quot;:&quot;</span>));</span><br><span class="line">    System.out.println(<span class="string">&quot;合并字符串: &quot;</span> + mergedString);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="过滤集合"><a href="#过滤集合" class="headerlink" title="过滤集合"></a>过滤集合</h3><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">    ArrayList&lt;String&gt; list = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line">    Collections.addAll(list,<span class="string">&quot;EDC&quot;</span>,<span class="string">&quot;张家辉&quot;</span>,<span class="string">&quot;韩寒&quot;</span>,<span class="string">&quot;乔布斯&quot;</span>,<span class="string">&quot;张曼玉&quot;</span>);</span><br><span class="line">    <span class="comment">//1.拿到所有姓张的 2.名字长度为3的 3.打印这些数据</span></span><br><span class="line">    list.stream()</span><br><span class="line">            .filter((s -&gt; &#123;</span><br><span class="line">                <span class="keyword">return</span> s.startsWith(<span class="string">&quot;张&quot;</span>);</span><br><span class="line">            &#125;))</span><br><span class="line">            .filter(s -&gt; &#123;</span><br><span class="line">                <span class="keyword">return</span> s.length() == <span class="number">3</span>;</span><br><span class="line">            &#125;).forEach(System.out::println);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="遍历集合"><a href="#遍历集合" class="headerlink" title="遍历集合"></a>遍历集合</h3><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">testForEach</span><span class="params">()</span></span>&#123;<span class="comment">//遍历集合</span></span><br><span class="line">    ArrayList&lt;String&gt; list = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line">    Collections.addAll(list,<span class="string">&quot;泰戈尔&quot;</span>,<span class="string">&quot;雨果&quot;</span>,<span class="string">&quot;阿德勒&quot;</span>,<span class="string">&quot;普罗米修斯&quot;</span>);</span><br><span class="line">    list.stream().forEach((String s) -&gt; &#123;</span><br><span class="line">        System.out.println(s);</span><br><span class="line">    &#125;);</span><br><span class="line">    list.forEach(System.out::println);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="获取元素个数"><a href="#获取元素个数" class="headerlink" title="获取元素个数"></a>获取元素个数</h3><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">testCount</span><span class="params">()</span></span>&#123;<span class="comment">//获取元素个数</span></span><br><span class="line">    ArrayList&lt;String&gt; list = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line">    Collections.addAll(list,<span class="string">&quot;斯嘉丽.约翰逊&quot;</span>,<span class="string">&quot;迪丽热巴&quot;</span>,<span class="string">&quot;王祖贤&quot;</span>,<span class="string">&quot;李子柒&quot;</span>);</span><br><span class="line">    <span class="keyword">long</span> count = list.stream().count();</span><br><span class="line">    list.size();</span><br><span class="line">    System.out.println(count);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="过滤符合条件的元素"><a href="#过滤符合条件的元素" class="headerlink" title="过滤符合条件的元素"></a>过滤符合条件的元素</h3><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">testFilter</span><span class="params">()</span></span>&#123;<span class="comment">//过滤符合条件的元素</span></span><br><span class="line">    ArrayList&lt;String&gt; list = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line">    Collections.addAll(list,<span class="string">&quot;泰戈尔&quot;</span>,<span class="string">&quot;雨果&quot;</span>,<span class="string">&quot;阿德勒&quot;</span>,<span class="string">&quot;普罗米修斯&quot;</span>);</span><br><span class="line">    list.stream().filter(s -&gt; s.length() == <span class="number">3</span>).forEach(System.out::println);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="获取前几个元素"><a href="#获取前几个元素" class="headerlink" title="获取前几个元素"></a>获取前几个元素</h3><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">testLimit</span><span class="params">()</span></span>&#123;<span class="comment">//获取前3个元素</span></span><br><span class="line">    ArrayList&lt;String&gt; list = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line">    Collections.addAll(list,<span class="string">&quot;斯嘉丽.约翰逊&quot;</span>,<span class="string">&quot;迪丽热巴&quot;</span>,<span class="string">&quot;王祖贤&quot;</span>,<span class="string">&quot;李子柒&quot;</span>);</span><br><span class="line">    list.stream().limit(<span class="number">3</span>).forEach(System.out::println);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="跳过前几个元素"><a href="#跳过前几个元素" class="headerlink" title="跳过前几个元素"></a>跳过前几个元素</h3><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">testSkip</span><span class="params">()</span></span>&#123;<span class="comment">//跳过前2个元素</span></span><br><span class="line">    ArrayList&lt;String&gt; list = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line">    Collections.addAll(list,<span class="string">&quot;斯嘉丽.约翰逊&quot;</span>,<span class="string">&quot;迪丽热巴&quot;</span>,<span class="string">&quot;王祖贤&quot;</span>,<span class="string">&quot;李子柒&quot;</span>);</span><br><span class="line">    list.stream().skip(<span class="number">2</span>).forEach(System.out::println);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="转换stream流的类型"><a href="#转换stream流的类型" class="headerlink" title="转换stream流的类型"></a>转换stream流的类型</h3><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">testMap</span><span class="params">()</span></span>&#123;</span><br><span class="line">    <span class="comment">//map()可以将一种类型的Stream流转换为另一种类型的Stream流</span></span><br><span class="line">    <span class="comment">//将Stream&lt;String&gt;转换为Stream&lt;Integer&gt;</span></span><br><span class="line">    Stream&lt;String&gt; stringStream = Stream.of(<span class="string">&quot;11&quot;</span>, <span class="string">&quot;22&quot;</span>, <span class="string">&quot;33&quot;</span>);</span><br><span class="line">    Stream&lt;Integer&gt; integerStream = stringStream.map(Integer::parseInt);</span><br><span class="line">    Stream&lt;Integer&gt; integerStream2 = stringStream.map((String str) -&gt; &#123;</span><br><span class="line">        <span class="keyword">return</span> Integer.parseInt(str);</span><br><span class="line">    &#125;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="根据元素升序排序"><a href="#根据元素升序排序" class="headerlink" title="根据元素升序排序"></a>根据元素升序排序</h3><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">testSorted</span><span class="params">()</span></span>&#123;</span><br><span class="line">    <span class="comment">//sorted()根据元素升序排序</span></span><br><span class="line">    <span class="comment">//sorted(Comparator&lt;? super T&gt; comparator)指定排序规则</span></span><br><span class="line">    Stream&lt;Integer&gt; integerStream = Stream.of(<span class="number">33</span>, <span class="number">22</span>, <span class="number">11</span>, <span class="number">55</span>, <span class="number">88</span>, <span class="number">99</span>);</span><br><span class="line">    integerStream.sorted().forEach(System.out::println);<span class="comment">//升序</span></span><br><span class="line">    integerStream.sorted((Integer i1,Integer i2) -&gt; i2 - i1<span class="comment">//降序</span></span><br><span class="line">    ).forEach(System.out::println);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="自定义对象集合去重"><a href="#自定义对象集合去重" class="headerlink" title="自定义对象集合去重"></a>自定义对象集合去重</h3><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">testDistinct</span><span class="params">()</span></span>&#123;</span><br><span class="line">    <span class="comment">//为String,int,自定义对象集合去重</span></span><br><span class="line">    Stream&lt;String&gt; stream1 = Stream.of(<span class="string">&quot;aa&quot;</span>, <span class="string">&quot;bb&quot;</span>, <span class="string">&quot;cc&quot;</span>, <span class="string">&quot;aa&quot;</span>, <span class="string">&quot;cc&quot;</span>);</span><br><span class="line">    stream1.distinct().forEach(System.out::println);</span><br><span class="line"></span><br><span class="line">    Stream&lt;Integer&gt; stream2 = Stream.of(<span class="number">11</span>, <span class="number">22</span>, <span class="number">33</span>, <span class="number">11</span>, <span class="number">22</span>, <span class="number">33</span>);</span><br><span class="line">    stream2.distinct().forEach(System.out::println);</span><br><span class="line"></span><br><span class="line">    <span class="comment">//对象需要重写hascCode和equase方法</span></span><br><span class="line">    Stream&lt;Person&gt; personStream = Stream.of(</span><br><span class="line">            <span class="keyword">new</span> Person(<span class="string">&quot;李清照&quot;</span>, <span class="number">18</span>),</span><br><span class="line">            <span class="keyword">new</span> Person(<span class="string">&quot;李白&quot;</span>, <span class="number">30</span>),</span><br><span class="line">            <span class="keyword">new</span> Person(<span class="string">&quot;李白&quot;</span>, <span class="number">30</span>)</span><br><span class="line">    );</span><br><span class="line">    personStream.distinct().forEach(System.out::println);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="判断元素是否符合条件"><a href="#判断元素是否符合条件" class="headerlink" title="判断元素是否符合条件"></a>判断元素是否符合条件</h3><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">testMatch</span><span class="params">()</span></span>&#123;</span><br><span class="line">    Stream&lt;Integer&gt; stream = Stream.of(<span class="number">5</span>, <span class="number">3</span>, <span class="number">6</span>, <span class="number">1</span>);</span><br><span class="line">    <span class="keyword">boolean</span> b = stream.allMatch((i -&gt; i &gt; <span class="number">0</span>));<span class="comment">//匹配所有元素,都满足条件true</span></span><br><span class="line">    <span class="keyword">boolean</span> b1 = stream.anyMatch(i -&gt; i &gt; <span class="number">5</span>);<span class="comment">//匹配部分元素,有一个满足条件即true</span></span><br><span class="line">    <span class="keyword">boolean</span> b2 = stream.noneMatch(i -&gt; i &lt; <span class="number">0</span>);<span class="comment">//匹配所有元素,都不满足条件为true</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="找到第一个元素"><a href="#找到第一个元素" class="headerlink" title="找到第一个元素"></a>找到第一个元素</h3><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">testFind</span><span class="params">()</span></span>&#123;</span><br><span class="line">    <span class="comment">//findFirst()找到第一个元素</span></span><br><span class="line">    Stream&lt;Integer&gt; stream = Stream.of(<span class="number">33</span>, <span class="number">22</span>, <span class="number">11</span>);</span><br><span class="line">    Optional&lt;Integer&gt; first = stream.findFirst();</span><br><span class="line">    System.out.println(first.get());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="将集合元素聚合"><a href="#将集合元素聚合" class="headerlink" title="将集合元素聚合"></a>将集合元素聚合</h3><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">testReduce</span><span class="params">()</span></span>&#123;</span><br><span class="line">    <span class="comment">//将集合元素合为一个数据</span></span><br><span class="line">    <span class="comment">//T reduce(T identity,BinaryOperator&lt;T&gt; accumulator)</span></span><br><span class="line">    <span class="comment">//T identity 默认值</span></span><br><span class="line">    <span class="comment">//BinaryOperator&lt;T&gt; accumulator 继承BiFunction 对数据进行处理的方式</span></span><br><span class="line">    <span class="comment">//Integer reduce = Stream.of(5, 6, 7, 8, 9).reduce(0, Integer::sum);</span></span><br><span class="line">    Integer reduce = Stream.of(<span class="number">5</span>, <span class="number">6</span>, <span class="number">7</span>, <span class="number">8</span>, <span class="number">9</span>).reduce(<span class="number">0</span>, (x, y) -&gt; &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;x=&quot;</span> + x + <span class="string">&quot;,y=&quot;</span> + y);</span><br><span class="line">        <span class="keyword">return</span> x + y;</span><br><span class="line">    &#125;);</span><br><span class="line">    System.out.println(reduce);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Map-和Reduce"><a href="#Map-和Reduce" class="headerlink" title="Map()和Reduce()"></a>Map()和Reduce()</h3><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">testMapAndReduce</span><span class="params">()</span></span>&#123;</span><br><span class="line">    <span class="comment">//求出所有年龄的总和</span></span><br><span class="line">    <span class="comment">//1.得到所有的年龄</span></span><br><span class="line">    <span class="comment">//2.求和</span></span><br><span class="line">    Integer sumAge = Stream.of(</span><br><span class="line">            <span class="keyword">new</span> Person(<span class="string">&quot;陈冠希&quot;</span>, <span class="number">40</span>),</span><br><span class="line">            <span class="keyword">new</span> Person(<span class="string">&quot;韩寒&quot;</span>, <span class="number">30</span>),</span><br><span class="line">            <span class="keyword">new</span> Person(<span class="string">&quot;彭于晏&quot;</span>, <span class="number">28</span>)</span><br><span class="line">    ).map((p) -&gt; &#123;<span class="comment">//1.得到所有的年龄</span></span><br><span class="line">        <span class="keyword">return</span> p.getAge();</span><br><span class="line">    &#125;).reduce(<span class="number">0</span>, (x, y) -&gt; &#123;<span class="comment">//2.求和</span></span><br><span class="line">        <span class="keyword">return</span> x + y;</span><br><span class="line">    &#125;);</span><br><span class="line">    <span class="comment">//简化版</span></span><br><span class="line">    <span class="comment">//.map(Person::getAge).reduce(0, Integer::sum);</span></span><br><span class="line">    System.out.println(<span class="string">&quot;年龄总和:&quot;</span>+sumAge+<span class="string">&quot;\n----------------&quot;</span>);</span><br><span class="line">    </span><br><span class="line">    <span class="comment">//求最大年龄</span></span><br><span class="line">    Integer maxAge = Stream.of(</span><br><span class="line">            <span class="keyword">new</span> Person(<span class="string">&quot;陈冠希&quot;</span>, <span class="number">40</span>),</span><br><span class="line">            <span class="keyword">new</span> Person(<span class="string">&quot;韩寒&quot;</span>, <span class="number">30</span>),</span><br><span class="line">            <span class="keyword">new</span> Person(<span class="string">&quot;彭于晏&quot;</span>, <span class="number">28</span>)</span><br><span class="line">    ).map(Person::getAge).reduce(<span class="number">0</span>,Integer::max);</span><br><span class="line">    System.out.println(<span class="string">&quot;最大年龄:&quot;</span>+maxAge+<span class="string">&quot;\n----------------&quot;</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">//统计 a 出现的次数</span></span><br><span class="line">    Integer count = Stream.of(<span class="string">&quot;a&quot;</span>, <span class="string">&quot;b&quot;</span>, <span class="string">&quot;c&quot;</span>, <span class="string">&quot;d&quot;</span>, <span class="string">&quot;a&quot;</span>)</span><br><span class="line">            .map(s -&gt; &#123;</span><br><span class="line">                <span class="keyword">return</span> <span class="string">&quot;a&quot;</span>.equals(s) ? <span class="number">1</span> : <span class="number">0</span>;</span><br><span class="line">            &#125;).reduce(<span class="number">0</span>, Integer::sum);</span><br><span class="line">    System.out.println(count);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="某个字符出现的次数"><a href="#某个字符出现的次数" class="headerlink" title="某个字符出现的次数"></a>某个字符出现的次数</h3><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">test</span><span class="params">()</span></span>&#123;</span><br><span class="line">    <span class="keyword">long</span> count = Stream.of(<span class="string">&quot;a&quot;</span>, <span class="string">&quot;b&quot;</span>, <span class="string">&quot;c&quot;</span>, <span class="string">&quot;d&quot;</span>, <span class="string">&quot;a&quot;</span>)</span><br><span class="line">            .filter(s -&gt; s.equals(<span class="string">&quot;a&quot;</span>)).count();</span><br><span class="line">    System.out.println(count);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="将Stream中的数据收集到集合或数组"><a href="#将Stream中的数据收集到集合或数组" class="headerlink" title="将Stream中的数据收集到集合或数组"></a>将Stream中的数据收集到集合或数组</h3><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 将流中的数据收集到集合或数组中</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">testCollect</span><span class="params">()</span></span>&#123;</span><br><span class="line">    Stream&lt;String&gt; stream = Stream.of(<span class="string">&quot;aa&quot;</span>, <span class="string">&quot;bb&quot;</span>, <span class="string">&quot;cc&quot;</span>);</span><br><span class="line">    <span class="comment">//收集到list</span></span><br><span class="line">    List&lt;String&gt; list = stream.collect(Collectors.toList());</span><br><span class="line">    <span class="comment">//收集到set</span></span><br><span class="line">    Set&lt;String&gt; set = stream.collect(Collectors.toSet());</span><br><span class="line">    <span class="comment">//收集到hashSet</span></span><br><span class="line">    HashSet&lt;String&gt; hashSet = stream.collect(Collectors.toCollection(HashSet::<span class="keyword">new</span>));</span><br><span class="line">    <span class="comment">//收集到ArrayList</span></span><br><span class="line">    ArrayList&lt;String&gt; arrayList = stream.collect(Collectors.toCollection(ArrayList::<span class="keyword">new</span>));</span><br><span class="line">    <span class="comment">//收集到Object数组</span></span><br><span class="line">    Object[] objects = stream.toArray();</span><br><span class="line">    <span class="comment">//收集到任意类型数组</span></span><br><span class="line">    String[] strings = stream.toArray(String[]::<span class="keyword">new</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="并行流"><a href="#并行流" class="headerlink" title="并行流"></a>并行流</h3><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">testParallel</span><span class="params">()</span></span>&#123;</span><br><span class="line">    <span class="comment">// 方式一:获取并行流</span></span><br><span class="line">    List&lt;String&gt; list = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line">    Stream&lt;String&gt; stringStream = list.parallelStream();</span><br><span class="line">    <span class="comment">//方式二:串行流转为并行流</span></span><br><span class="line">    Stream&lt;Integer&gt; stream = Stream.of(<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>);</span><br><span class="line">    System.out.println(<span class="string">&quot;--并行流---&quot;</span>);</span><br><span class="line">    stream.parallel()<span class="comment">//转为并行流</span></span><br><span class="line">            .filter(i -&gt; &#123;</span><br><span class="line">                System.out.println(Thread.currentThread() + <span class="string">&quot;:&quot;</span> + i);</span><br><span class="line">                <span class="keyword">return</span> i &gt; <span class="number">3</span>;</span><br><span class="line">            &#125;).count();</span><br><span class="line"></span><br><span class="line">    System.out.println(<span class="string">&quot;---串行流---&quot;</span>);</span><br><span class="line">    Stream.of(<span class="number">5</span>,<span class="number">6</span>,<span class="number">7</span>,<span class="number">8</span>,<span class="number">9</span>,<span class="number">1</span>,<span class="number">23</span>,<span class="number">55</span>).filter(i -&gt; &#123;</span><br><span class="line">        System.out.println(Thread.currentThread() + <span class="string">&quot;:&quot;</span> +i);</span><br><span class="line">        <span class="keyword">return</span> i &gt; <span class="number">3</span>;</span><br><span class="line">    &#125;).count();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="实现setInterval"><a href="#实现setInterval" class="headerlink" title="实现setInterval()"></a>实现setInterval()</h3><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Test1</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">        <span class="keyword">new</span> Test1().setInterval(() -&gt; System.out.println(Math.random()),<span class="number">1000L</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setInterval</span><span class="params">(A a,<span class="keyword">long</span> time)</span> <span class="keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">        <span class="keyword">new</span> Thread(() -&gt; &#123;<span class="comment">//在一个新的线程中执行防止线程阻塞</span></span><br><span class="line">            <span class="keyword">while</span> (<span class="keyword">true</span>)&#123;</span><br><span class="line">                <span class="keyword">try</span> &#123;</span><br><span class="line">                    Thread.sleep(time);</span><br><span class="line">                &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">                    e.printStackTrace();</span><br><span class="line">                &#125;</span><br><span class="line">                a.func();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;).start();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">interface</span> <span class="title">A</span></span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">func</span><span class="params">()</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>]]></content>
+      <categories>
+        <category>Java基础</category>
+        <category>Java新特性</category>
+      </categories>
+      <tags>
+        <tag>Java</tag>
+      </tags>
+  </entry>
+</search>
