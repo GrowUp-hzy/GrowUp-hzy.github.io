@@ -1168,7 +1168,7 @@ pre .javascript .function {
 }
 .links-of-author a::before,
 .links-of-author span.exturl::before {
-  background: #f533ff;
+  background: #1d7cff;
   border-radius: 50%;
   content: ' ';
   display: inline-block;
@@ -2483,11 +2483,14 @@ hr {
   display: inline-block;
 }
 body {
-  background: url("/images/wallhaven-eo3vql.png");
+  background: url("/images/wallhaven-j85zrm.jpg");
   background-repeat: no-repeat;
   background-attachment: fixed;
   background-position: 50% 50%;
   background-size: cover;
+}
+.header {
+  background: linear-gradient(90deg, rgba(247,149,51,0.102) 0, rgba(243,112,85,0.102) 15%, rgba(239,78,123,0.102) 30%, rgba(161,102,171,0.102) 44%, rgba(80,115,184,0.102) 58%, rgba(16,152,173,0.102) 72%, rgba(7,179,155,0.102) 86%, rgba(109,186,130,0.102) 100%);
 }
 .sidebar {
   transition-duration: 0.4s;
@@ -2501,4 +2504,9 @@ body {
   border-radius: initial;
   box-shadow: 0 2px 2px 0 rgba(0,0,0,0.12), 0 3px 1px -2px rgba(0,0,0,0.06), 0 1px 5px 0 rgba(0,0,0,0.12);
   padding: 40px;
+}
+.footer {
+  background: rgba(0,0,0,0.1);
+  color: var(--text-color);
+  padding: 10px 0;
 }
