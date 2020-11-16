@@ -642,7 +642,7 @@
 <li>实际上,在开发中,如果需要创建5个以上的线程,那么就可以使用线程池来管理</li>
 </ol>
 <p><strong>线程池的类关系图</strong></p>
-<p><img src="D:\study\Markdown\images\qED6aYMo9GIJTc7.png" alt="image-20200621135143739"></p>
+<p><img src="https://i.loli.net/2020/06/21/qED6aYMo9GIJTc7.png" alt="image-20200621135143739"></p>
 <h2 id="线程池的构造器参数"><a href="#线程池的构造器参数" class="headerlink" title="线程池的构造器参数"></a><strong>线程池的构造器参数</strong></h2><table>
 <thead>
 <tr>
@@ -687,7 +687,7 @@
 <li><code>corePoolSize</code>指的是核心线程数:线程池在完成初始化后,默认情况下,还没有创建任何线程,线程池会等待有任务到来时,再创建新线程去执行任务,直到达到核心线程数,之后核心线程会一直保持这个数量;当任务数量超过核心线程数,将任务放在阻塞队列<code>workQueue</code>中,等待核心线程空闲后处理</li>
 <li>如果核心线程全部在工作中,而且队列也满了,线程池就会在核心线程的基础上,额外增加一些线程,这些新增加的线程数最大上限就是<code>maxPoolSize</code></li>
 </ul>
-<p><img src="D:\study\Markdown\images\Z9WRJDTiGud25am.png" alt="image-20200621142929332"></p>
+<p><img src="https://i.loli.net/2020/06/21/Z9WRJDTiGud25am.png" alt="image-20200621142929332"></p>
 <p><strong>线程创建规则</strong></p>
 <ol>
 <li>如果线程数小于corePoolSize, 即使其他线程处于空闲状态,也会创建一个新线程(核心线程)来运行新任务</li>
@@ -695,7 +695,7 @@
 <li>如果队列已满,并且线程数小于maxPoolSize,则创建一个新线程来运行任务</li>
 <li>如果队列已满,并且线程数大于或等于maxPoolSize则拒绝该任务</li>
 </ol>
-<p><img src="D:\study\Markdown\images\jHp8ADB5tyfu1bI.jpg" alt="thread_pool"></p>
+<p><img src="https://i.loli.net/2020/09/10/jHp8ADB5tyfu1bI.jpg" alt="thread_pool"></p>
 <p><strong>增减线程的特点</strong></p>
 <ol>
 <li>通过设置corePoolSize和maxPoolSize为相同数量,就可以创建固定大小的线程池,即使队列满了也不会在拓展线程</li>
@@ -714,7 +714,7 @@
 <li>新的线程是由ThreadFactory创建的,默认使用的线程工厂是<code>Executors.defaultThreadFactory()</code>,创建出来的线程都在同一个线程组,拥有同样的<code>NORM_PRIORITY</code>优先级并且都不是守护线程;如果自己定义ThreadFactory,那么就可以改变线程名,线程组,优先级,是否是守护线程等</li>
 <li>通常使用默认的就可以,源码如下:</li>
 </ul>
-<p><img src="D:\study\Markdown\images\z1wWjDkSo5VLuG6.png" alt="image-20200621150205849"></p>
+<p><img src="https://i.loli.net/2020/10/19/z1wWjDkSo5VLuG6.png" alt="image-20200621150205849"></p>
 <p><strong>workQueue</strong></p>
 <p>有三种最常见的队列类型:</p>
 <ol>
