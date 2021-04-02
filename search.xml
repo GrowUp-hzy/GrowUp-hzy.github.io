@@ -1166,6 +1166,8 @@
     <url>/2019/10/26/MyCat%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/</url>
     <content><![CDATA[<h1 id="Mycat数据库中间件"><a href="#Mycat数据库中间件" class="headerlink" title="Mycat数据库中间件"></a>Mycat数据库中间件</h1><p> 1、<strong>数据库中间件</strong>：</p>
 <p>是一类连接软件组件和应用的计算机软件，以便于软件各部件之间的沟通。 例子：Tomcat，web中间件。 数据库中间件：连接java应用程序和数据库 </p>
+<a id="more"></a>
+
 <p>2、<strong>为什么要用Mycat？</strong> </p>
 <ul>
 <li>Java与数据库紧耦合</li>
@@ -1554,7 +1556,10 @@
   <entry>
     <title>MySQL存储引擎和索引</title>
     <url>/2019/06/12/MySQL%E5%AD%98%E5%82%A8%E5%BC%95%E6%93%8E%E5%92%8C%E7%B4%A2%E5%BC%95/</url>
-    <content><![CDATA[<h1 id="mysql逻辑架构"><a href="#mysql逻辑架构" class="headerlink" title="mysql逻辑架构"></a>mysql逻辑架构</h1><p><img src="https://gitee.com/hanzhengyu/picture-bed-2021/raw/master/20210304111747.png" alt="a、MySql架构1"></p>
+    <content><![CDATA[<h1 id="mysql逻辑架构"><a href="#mysql逻辑架构" class="headerlink" title="mysql逻辑架构"></a>mysql逻辑架构</h1><img src="https://gitee.com/hanzhengyu/picture-bed-2021/raw/master/20210304111747.png" class="full-image" />
+
+<a id="more"></a>
+
 <p><strong>利用show profile查看sql的执行周期</strong></p>
 <p>修改配置文件/etc/my.cnf,新增以下一行,并重启mysql</p>
 <figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">query_cache_type&#x3D;1</span><br></pre></td></tr></table></figure>
