@@ -1,0 +1,1214 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/cat.jpg">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/cat.jpg">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/cat.jpg">
+  <link rel="mask-icon" href="/images/cat.jpg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"growup-hzy.github.io","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="mysql逻辑架构 利用show profile查看sql的执行周期 修改配置文件&#x2F;etc&#x2F;my.cnf,新增以下一行,并重启mysql 1query_cache_type&#x3D;1  开启profiling: 12mysql&gt; show variables like &amp;#x27;%profiling%&amp;#x27;;mysql&gt; set profiling&#x3D;1;   显示最近的几次">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MySQL存储引擎和索引">
+<meta property="og:url" content="https://growup-hzy.github.io/2019/06/12/MySQL%E5%AD%98%E5%82%A8%E5%BC%95%E6%93%8E%E5%92%8C%E7%B4%A2%E5%BC%95/index.html">
+<meta property="og:site_name" content="煜虚人渊">
+<meta property="og:description" content="mysql逻辑架构 利用show profile查看sql的执行周期 修改配置文件&#x2F;etc&#x2F;my.cnf,新增以下一行,并重启mysql 1query_cache_type&#x3D;1  开启profiling: 12mysql&gt; show variables like &amp;#x27;%profiling%&amp;#x27;;mysql&gt; set profiling&#x3D;1;   显示最近的几次">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://gitee.com/hanzhengyu/picture-bed-2021/raw/master/20210304111747.png">
+<meta property="og:image" content="https://gitee.com/hanzhengyu/picture-bed-2021/raw/master/20210304111800.png">
+<meta property="og:image" content="d:/study/Markdown/images/btree.png">
+<meta property="og:image" content="d:/study/Markdown/images/b+tree.png">
+<meta property="og:image" content="d:/study/Markdown/images/事件复杂度2.bmp">
+<meta property="og:image" content="https://i.loli.net/2020/05/17/ShCrF894WibJ2dV.png">
+<meta property="og:image" content="https://i.loli.net/2020/05/17/6ZHISBnUur4slzG.png">
+<meta property="og:image" content="https://growup-hzy.github.io/2019/06/12/MySQL%E5%AD%98%E5%82%A8%E5%BC%95%E6%93%8E%E5%92%8C%E7%B4%A2%E5%BC%95/images%5Cimage-20200401123805293.png">
+<meta property="og:image" content="https://i.loli.net/2020/05/17/ZDLJeMaknrRclFx.png">
+<meta property="og:image" content="https://i.loli.net/2020/05/17/b4milnOG7FyAYN3.png">
+<meta property="og:image" content="https://i.loli.net/2020/05/19/YmNDORcWilqZ7TU.png">
+<meta property="og:image" content="https://i.loli.net/2020/05/19/FpZWhv6ry5aHjQg.png">
+<meta property="article:published_time" content="2019-06-12T12:16:33.000Z">
+<meta property="article:modified_time" content="2021-04-02T07:05:03.453Z">
+<meta property="article:author" content="hzy">
+<meta property="article:tag" content="mysql">
+<meta property="article:tag" content="B+Tree">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://gitee.com/hanzhengyu/picture-bed-2021/raw/master/20210304111747.png">
+
+<link rel="canonical" href="https://growup-hzy.github.io/2019/06/12/MySQL%E5%AD%98%E5%82%A8%E5%BC%95%E6%93%8E%E5%92%8C%E7%B4%A2%E5%BC%95/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>MySQL存储引擎和索引 | 煜虚人渊</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">煜虚人渊</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">一个不断成长的Java开发人员</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://growup-hzy.github.io/2019/06/12/MySQL%E5%AD%98%E5%82%A8%E5%BC%95%E6%93%8E%E5%92%8C%E7%B4%A2%E5%BC%95/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/uploads/cat.jpg">
+      <meta itemprop="name" content="hzy">
+      <meta itemprop="description" content="记录学习的过程">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="煜虚人渊">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          MySQL存储引擎和索引
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-06-12 20:16:33" itemprop="dateCreated datePublished" datetime="2019-06-12T20:16:33+08:00">2019-06-12</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-04-02 15:05:03" itemprop="dateModified" datetime="2021-04-02T15:05:03+08:00">2021-04-02</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/" itemprop="url" rel="index"><span itemprop="name">数据库</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="mysql逻辑架构"><a href="#mysql逻辑架构" class="headerlink" title="mysql逻辑架构"></a>mysql逻辑架构</h1><p><img src="https://gitee.com/hanzhengyu/picture-bed-2021/raw/master/20210304111747.png" alt="a、MySql架构1"></p>
+<p><strong>利用show profile查看sql的执行周期</strong></p>
+<p>修改配置文件/etc/my.cnf,新增以下一行,并重启mysql</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">query_cache_type&#x3D;1</span><br></pre></td></tr></table></figure>
+
+<p>开启profiling:</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; show variables like &#x27;%profiling%&#x27;;</span><br><span class="line">mysql&gt; set profiling=1;</span><br></pre></td></tr></table></figure>
+
+<p> 显示最近的几次查询:</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; show profiles;</span><br><span class="line">+<span class="comment">----------+------------+-----------------------------------+</span></span><br><span class="line">| Query_ID | Duration   | Query                             |</span><br><span class="line">+<span class="comment">----------+------------+-----------------------------------+</span></span><br><span class="line">|        1 | 0.00136600 | <span class="keyword">show</span> <span class="keyword">variables</span> <span class="keyword">like</span> <span class="string">&#x27;%profiling%&#x27;</span> |</span><br><span class="line">|        <span class="number">2</span> | <span class="number">0.00049975</span> | <span class="keyword">select</span> * <span class="keyword">from</span> mytbl2 <span class="keyword">where</span> <span class="keyword">id</span> = <span class="number">2</span> |</span><br><span class="line">+<span class="comment">----------+------------+-----------------------------------+</span></span><br><span class="line">查询<span class="keyword">id</span>       时长         <span class="keyword">sql</span></span><br></pre></td></tr></table></figure>
+
+<p>查看详细过程:</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">show</span> profile cpu,<span class="keyword">block</span> io <span class="keyword">for</span> <span class="keyword">query</span> 编号</span><br><span class="line">就是上图的过程</span><br></pre></td></tr></table></figure>
+
+<h2 id="存储引擎"><a href="#存储引擎" class="headerlink" title="存储引擎"></a>存储引擎</h2><p>查看存储引擎:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SHOW ENGINES;</span><br></pre></td></tr></table></figure>
+
+<p><strong>1、InnoDB存储引擎</strong><br>InnoDB是MySQL的默认事务型引擎，它被设计用来处理大量的短期(short-lived)事务。除非有非常特别的原因需要使用其他的存储引擎，否则应该优先考虑InnoDB引擎。</p>
+<p><strong>2、MyISAM存储引擎</strong><br>MyISAM提供了大量的特性，包括全文索引、压缩、空间函数(GIS)等，但MyISAM不支持事务和行级锁，有一个毫无疑问的缺陷就是崩溃后无法安全恢复。</p>
+<p><strong>3、Archive引擎</strong><br>Archive档案存储引擎只支持INSERT和SELECT操作，在MySQL5.1之前不支持索引。<br>Archive表适合日志和数据采集类应用。<br>根据英文的测试结论来看，Archive表比MyISAM表要小大约75%，比支持事务处理的InnoDB表小大约83%。</p>
+<p><strong>4、Blackhole引擎</strong><br>Blackhole引擎没有实现任何存储机制，它会丢弃所有插入的数据，不做任何保存。但服务器会记录Blackhole表的日志，所以可以用于复制数据到备库，或者简单地记录到日志。但这种应用方式会碰到很多问题，因此并不推荐。 </p>
+<p><strong>5、CSV引擎</strong><br>CSV引擎可以将普通的CSV文件作为MySQL的表来处理，但不支持索引。<br>CSV引擎可以作为一种数据交换的机制，非常有用。<br>CSV存储的数据直接可以在操作系统里，用文本编辑器，或者excel读取。</p>
+<p><strong>6、Memory引擎</strong><br>如果需要快速地访问数据，并且这些数据不会被修改，重启以后丢失也没有关系，那么使用Memory表是非常有用。Memory表至少比MyISAM表要快一个数量级。</p>
+<p><strong>7、Federated引擎</strong><br>Federated引擎是访问其他MySQL服务器的一个代理，尽管该引擎看起来提供了一种很好的跨服务器的灵活性，但也经常带来问题，因此默认是禁用的。</p>
+<p>常用的有MyISAM和InnoDB</p>
+<p><strong>它们的区别:</strong></p>
+<table>
+<thead>
+<tr>
+<th>对比项</th>
+<th>MyISAM</th>
+<th>InnoDB</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>外键</strong></td>
+<td>不支持</td>
+<td>支持</td>
+</tr>
+<tr>
+<td><strong>事务</strong></td>
+<td>不支持</td>
+<td>支持</td>
+</tr>
+<tr>
+<td><strong>行表锁</strong></td>
+<td>表锁，即使操作一条记录也会锁住整个表，不适合高并发的操作</td>
+<td>行锁,操作时只锁某一行，不对其它行有影响，适合高并发的操作</td>
+</tr>
+<tr>
+<td><strong>缓存</strong></td>
+<td>只缓存索引，不缓存真实数据</td>
+<td>不仅缓存索引还要缓存真实数据，对内存要求较高，而且内存大小对性能有决定性的影响</td>
+</tr>
+<tr>
+<td><strong>关注点</strong></td>
+<td>节省资源、消耗少、简单业务</td>
+<td>并发写、事务、更大资源</td>
+</tr>
+</tbody></table>
+<p>mysql默认使用InnoDB,但mysql内置的系统表使用MyISAM,因为没有高并发,而且节省资源.</p>
+<p>mysql单表瓶颈500w数据,单库瓶颈5000w数据</p>
+<h1 id="索引"><a href="#索引" class="headerlink" title="索引"></a>索引</h1><p>MySQL官方对索引的定义为:<strong>索引(Index)是帮助MySQL高效获取数据的数据结构.</strong><br>索引的目的在于提高查询效率，可以类比字典，</p>
+<p>如果要查“mysql”这个单词，我们肯定需要定位到m字母，然后从下往下找到y字母，再找到剩下的sql。</p>
+<p>如果没有索引，那么你可能需要a—-z，如果我想找到Java开头的单词呢？或者Oracle开头的单词呢？</p>
+<p>在数据之外，<strong>数据库系统还维护着满足特定查找算法的数据结构</strong>，这些数据结构以某种方式引用（指向）数据，<br>这样就可以在这些数据结构上实现高级查找算法。这种数据结构，就是索引。下图就是一种可能的索引方式示例：</p>
+<p><img src="https://gitee.com/hanzhengyu/picture-bed-2021/raw/master/20210304111800.png"></p>
+<p>左边是数据表，一共有两列七条记录，最左边的是数据记录的物理地址<br>为了加快Col2的查找，可以维护一个右边所示的二叉查找树，每个节点分别包含索引键值和一个指向对应数据记录物理地址的指针，这样就可以运用二叉查找在一定的复杂度内获取到相应数据，从而快速的检索出符合条件的记录。</p>
+<p><strong>优势:</strong></p>
+<ul>
+<li>提高数据检索的效率,降低数据库的IO成本</li>
+<li>通过索引列对数据进行排序,降低数据排序的成本,降低了CPU的消耗</li>
+</ul>
+<p><strong>劣势:</strong></p>
+<ul>
+<li>虽然索引大大提高了查询速度,同时却会降低更新表的速度(INSERT,UPDATE,DELETE),因为更新表是,mysql不仅要保存数据,还要保存索引文件每次更新添加了索引列的字段,都会调整因为更新所带来的键值变化后的索引信息</li>
+<li>实际上索引也是一张表,该表保存了主键与索引字段,并指向实体表的记录,所以索引也是要占用磁盘空间的</li>
+</ul>
+<h2 id="索引结构"><a href="#索引结构" class="headerlink" title="索引结构"></a>索引结构</h2><h3 id="BTree"><a href="#BTree" class="headerlink" title="BTree"></a>BTree</h3><p><img src="D:\study\Markdown\images\btree.png"></p>
+<p>1.索引</p>
+<p>2.红色方块代表指向数据的指针</p>
+<p>3.黄色代表向下节点的索引</p>
+<p>比如要查找98,与17,35对比,小于两者走P1,在它们之间走P2,大于它们走P3,以此类推找到最终的结果</p>
+<h3 id="B-Tree"><a href="#B-Tree" class="headerlink" title="B+Tree"></a>B+Tree</h3><p><img src="D:\study\Markdown\images\b+tree.png"></p>
+<p>1.索引</p>
+<p>2.向下节点的索引</p>
+<p>走到最终的叶子节点才有指向数据的指针</p>
+<h3 id="B-Tree与B-Tree-的区别"><a href="#B-Tree与B-Tree-的区别" class="headerlink" title="B+Tree与B-Tree 的区别"></a>B+Tree与B-Tree 的区别</h3><p>　1）B-树的关键字和记录是放在一起的，叶子节点可以看作外部节点，不包含任何信息；B+树的非叶子节点中只有关键字和指向下一个节点的索引，记录只放在叶子节点中。<br>　 2）在B-树中，越靠近根节点的记录查找时间越快，只要找到关键字即可确定记录的存在；而B+树中每个记录的查找时间基本是一样的，都需要从根节点走到叶子节点，而且在叶子节点中还要再比较关键字。从这个角度看B-树的性能好像要比B+树好，而在实际应用中却是B+树的性能要好些。因为B+树的非叶子节点不存放实际的数据，这样<strong>每个节点可容纳的元素个数比B-树多，树高比B-树小，这样带来的好处是减少磁盘访问次数。尽管B+树找到一个记录所需的比较次数要比B-树多，但是一次磁盘访问的时间相当于成百上千次内存比较的时间，因此实际中B+树的性能可能还会好些</strong>，而且B+树的叶子节点使用指针连接在一起，方便顺序遍历（例如查看一个目录下的所有文件，一个表中的所有记录等），这也是很多数据库和文件系统使用B+树的缘故。<br>　<br>思考：为什么说B+树比B-树更适合实际应用中操作系统的文件索引和数据库索引？ </p>
+<ol>
+<li>B+树的磁盘读写代价更低<br>　　B+树的内部结点并没有指向关键字具体信息的指针。因此其内部结点相对B 树更小。如果把所有同一内部结点的关键字存放在同一盘块中，那么盘块所能容纳的关键字数量也越多。一次性读入内存中的需要查找的关键字也就越多。相对来说IO读写次数也就降低了。 </li>
+<li>B+树的查询效率更加稳定<br>　　由于非终结点并不是最终指向文件内容的结点，而只是叶子结点中关键字的索引。所以任何关键字的查找必须走一条从根结点到叶子结点的路。所有关键字查询的路径长度相同，导致每一个数据的查询效率相当。</li>
+</ol>
+<h3 id="关于时间复杂度"><a href="#关于时间复杂度" class="headerlink" title="关于时间复杂度"></a>关于时间复杂度</h3><p>​    同一问题可用不同算法解决，而一个算法的质量优劣将影响到算法乃至程序的效率。算法分析的目的在于选择合适算法和改进算法。</p>
+<p><img src="D:\study\Markdown\images\事件复杂度2.bmp"></p>
+<h3 id="聚簇索引和非聚簇索引"><a href="#聚簇索引和非聚簇索引" class="headerlink" title="聚簇索引和非聚簇索引"></a>聚簇索引和非聚簇索引</h3><p>聚簇索引并不是一种单独的索引类型，而是一种数据存储方式。<br>术语‘聚簇’表示数据行和相邻的键值聚簇的存储在一起。<br> 如下图，左侧的索引就是聚簇索引，因为数据行在磁盘的排列和索引排序保持一致。</p>
+<p><img src="https://i.loli.net/2020/05/17/ShCrF894WibJ2dV.png"></p>
+<p>聚簇索引的好处：<br>按照聚簇索引排列顺序，查询显示一定范围数据的时候，由于数据都是紧密相连，数据库不不用从多个数据块中提取数据，所以节省了大量的io操作。<br>聚簇索引的限制：<br>对于mysql数据库目前只有innodb数据引擎支持聚簇索引，而Myisam并不支持聚簇索引。<br>由于数据物理存储排序方式只能有一种，所以每个Mysql的表只能有一个聚簇索引。一般情况下就是该表的主键。<br>为了充分利用聚簇索引的聚簇的特性，所以innodb表的主键列尽量选用有序的顺序id，而不建议用无序的id，比如uuid这种。</p>
+<h2 id="索引分类"><a href="#索引分类" class="headerlink" title="索引分类"></a>索引分类</h2><h3 id="单值索引"><a href="#单值索引" class="headerlink" title="单值索引"></a>单值索引</h3><p>即一个索引只包含单个列,一个表可以有多个单列索引</p>
+<p>随表一起建索引：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> customer (<span class="keyword">id</span> <span class="built_in">INT</span>(<span class="number">10</span>) <span class="keyword">UNSIGNED</span>  AUTO_INCREMENT ,customer_no <span class="built_in">VARCHAR</span>(<span class="number">200</span>),customer_name <span class="built_in">VARCHAR</span>(<span class="number">200</span>),</span><br><span class="line">  PRIMARY <span class="keyword">KEY</span>(<span class="keyword">id</span>),</span><br><span class="line">  <span class="keyword">KEY</span> (customer_name)</span><br><span class="line">);</span><br></pre></td></tr></table></figure>
+
+<p>单独建单值索引：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span>  <span class="keyword">INDEX</span> idx_customer_name <span class="keyword">ON</span> customer(customer_name); </span><br></pre></td></tr></table></figure>
+
+<p>删除索引：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">DROP</span> <span class="keyword">INDEX</span> idx_customer_name  <span class="keyword">on</span> customer;</span><br></pre></td></tr></table></figure>
+
+<h3 id="唯一索引"><a href="#唯一索引" class="headerlink" title="唯一索引"></a>唯一索引</h3><p>索引列必须唯一,但允许有空值</p>
+<p>随表一起建索引：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> customer (<span class="keyword">id</span> <span class="built_in">INT</span>(<span class="number">10</span>) <span class="keyword">UNSIGNED</span>  AUTO_INCREMENT ,customer_no <span class="built_in">VARCHAR</span>(<span class="number">200</span>),customer_name <span class="built_in">VARCHAR</span>(<span class="number">200</span>),</span><br><span class="line">  PRIMARY <span class="keyword">KEY</span>(<span class="keyword">id</span>),</span><br><span class="line">  <span class="keyword">KEY</span> (customer_name),</span><br><span class="line">  <span class="keyword">UNIQUE</span> (customer_no)</span><br><span class="line">);</span><br></pre></td></tr></table></figure>
+
+<p>单独建唯一索引：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">UNIQUE</span> <span class="keyword">INDEX</span> idx_customer_no <span class="keyword">ON</span> customer(customer_no); </span><br></pre></td></tr></table></figure>
+
+<p>删除索引：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">DROP</span> <span class="keyword">INDEX</span> idx_customer_no <span class="keyword">on</span> customer ;</span><br></pre></td></tr></table></figure>
+
+<h3 id="主键索引"><a href="#主键索引" class="headerlink" title="主键索引"></a>主键索引</h3><p>设定为主键的字段会自动建立索引,innodb为聚簇索引</p>
+<p>随表一起建索引：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> customer (<span class="keyword">id</span> <span class="built_in">INT</span>(<span class="number">10</span>) <span class="keyword">UNSIGNED</span>  AUTO_INCREMENT ,customer_no <span class="built_in">VARCHAR</span>(<span class="number">200</span>),customer_name <span class="built_in">VARCHAR</span>(<span class="number">200</span>),</span><br><span class="line">  PRIMARY <span class="keyword">KEY</span>(<span class="keyword">id</span>) </span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> customer2 (<span class="keyword">id</span> <span class="built_in">INT</span>(<span class="number">10</span>) <span class="keyword">UNSIGNED</span>   ,customer_no <span class="built_in">VARCHAR</span>(<span class="number">200</span>),customer_name <span class="built_in">VARCHAR</span>(<span class="number">200</span>),</span><br><span class="line">  PRIMARY <span class="keyword">KEY</span>(<span class="keyword">id</span>) </span><br><span class="line">);</span><br></pre></td></tr></table></figure>
+
+<p> 单独建主键索引：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">ALTER</span> <span class="keyword">TABLE</span> customer </span><br><span class="line"> <span class="keyword">add</span> PRIMARY <span class="keyword">KEY</span> customer(customer_no);  </span><br></pre></td></tr></table></figure>
+
+<p>删除建主键索引：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">ALTER</span> <span class="keyword">TABLE</span> customer </span><br><span class="line"> <span class="keyword">drop</span> PRIMARY <span class="keyword">KEY</span> ;  </span><br></pre></td></tr></table></figure>
+
+<p>修改建主键索引：<br>必须先删除掉(drop)原索引，再新建(add)索引</p>
+<h3 id="复合索引"><a href="#复合索引" class="headerlink" title="复合索引"></a>复合索引</h3><p>即一个索引包含多个列</p>
+<p>随表一起建索引：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> customer (<span class="keyword">id</span> <span class="built_in">INT</span>(<span class="number">10</span>) <span class="keyword">UNSIGNED</span>  AUTO_INCREMENT ,customer_no <span class="built_in">VARCHAR</span>(<span class="number">200</span>),customer_name <span class="built_in">VARCHAR</span>(<span class="number">200</span>),</span><br><span class="line">  PRIMARY <span class="keyword">KEY</span>(<span class="keyword">id</span>),</span><br><span class="line">  <span class="keyword">KEY</span> (customer_name),</span><br><span class="line">  <span class="keyword">UNIQUE</span> (customer_name),</span><br><span class="line">  <span class="keyword">KEY</span> (customer_no,customer_name)</span><br><span class="line">);</span><br></pre></td></tr></table></figure>
+
+<p>单独建索引：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span>  <span class="keyword">INDEX</span> idx_no_name <span class="keyword">ON</span> customer(customer_no,customer_name); </span><br></pre></td></tr></table></figure>
+
+<p>删除索引：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">DROP</span> <span class="keyword">INDEX</span> idx_no_name  <span class="keyword">on</span> customer ;</span><br></pre></td></tr></table></figure>
+
+<h3 id="使用ALTER命令"><a href="#使用ALTER命令" class="headerlink" title="使用ALTER命令"></a>使用ALTER命令</h3><p><code>ALTER TABLE tbl_name ADD UNIQUE index_name (column_list)</code>: 这条语句创建索引的值必须是唯一的（除了NULL外，NULL可能会出现多次）。</p>
+<p><code>ALTER TABLE tbl_name ADD INDEX index_name (column_list)</code>: 添加普通索引，索引值可出现多次。</p>
+<p><code>ALTER TABLE tbl_name ADD FULLTEXT index_name (column_list)</code>:该语句指定了索引为 FULLTEXT ，用于全文索引。</p>
+<h3 id="哪些情况需要创建索引"><a href="#哪些情况需要创建索引" class="headerlink" title="哪些情况需要创建索引"></a>哪些情况需要创建索引</h3><ul>
+<li>主键自动建立唯一索引</li>
+<li>频繁作为查询条件的字段应该创建索引</li>
+<li>查询中与其他表关联的字段,外键关系应创建索引</li>
+<li>单键/组合索引的选择问题,组合索引性价比更高</li>
+<li>查询中排序的字段,提高排序速度</li>
+<li>查询中统计或者分组字段</li>
+</ul>
+<h3 id="哪些情况不要创建索引"><a href="#哪些情况不要创建索引" class="headerlink" title="哪些情况不要创建索引"></a>哪些情况不要创建索引</h3><ul>
+<li>表记录太少</li>
+<li>经常增删改的表或者字段</li>
+<li>where条件里用不到的字段</li>
+<li>过滤性不好的字段(如性别)</li>
+</ul>
+<h2 id="性能分析"><a href="#性能分析" class="headerlink" title="性能分析"></a>性能分析</h2><p>衡量是否需要加索引的真正指标</p>
+<p>使用EXPLAIN关键字可以模拟优化器执行SQL查询语句,从而知道MySQL是如何处理你的SQL语句的,分析你的查询语句或是表结构的性能瓶颈.</p>
+<p><strong>通过EXPLAIN可以分析出以下信息</strong>:</p>
+<ul>
+<li>表的读取顺序</li>
+<li>哪些索引可以使用</li>
+<li>数据读取操作的操作类型</li>
+<li>哪些索引被实际使用</li>
+<li>表之间的引用</li>
+<li>每张表有多少行被物理查询</li>
+</ul>
+<p><strong>语法</strong>:</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">EXPLAIN</span> <span class="keyword">SELECT</span> SQL_NO_CACHE * FROM...</span><br></pre></td></tr></table></figure>
+
+<p>SQL_NO_CACHE:关闭缓存</p>
+<h3 id="执行计划包含的信息"><a href="#执行计划包含的信息" class="headerlink" title="执行计划包含的信息:"></a>执行计划包含的信息:</h3><img src="https://i.loli.net/2020/05/17/6ZHISBnUur4slzG.png" alt="image-20200401111843128" style="zoom:150%;" />
+
+<ul>
+<li><p><strong>==id==</strong>:SELECT查询的序列号,包含一组数字,表示查询中执行SELECT子句或操作表的顺序.</p>
+<p>三种情况:</p>
+<ul>
+<li>id相同,执行顺序由上至下</li>
+<li>id不同,如果是子查询,id的序号会递增,id值越大优先级越高</li>
+<li>id相同不同,同时存在,id如果相同，可以认为是一组，从上往下顺序执行；在所有组中，id值越大，优先级越高，越先执行</li>
+</ul>
+<p>关注点:</p>
+<ul>
+<li>id号每个号码,表示一趟独立的查询,一个sql的查询趟数越少越好.</li>
+</ul>
+</li>
+<li><p><strong>==type==</strong>:显示查询使用了何种类型, 是较为重要的一个指标</p>
+<p><img src="images%5Cimage-20200401123805293.png" alt="image-20200401123805293"></p>
+<p>结果值从最好到最坏依次是： </p>
+<p><code>system &gt; const &gt; eq_ref &gt; ref &gt; fulltext &gt; ref_or_null &gt; index_merge &gt; unique_subquery &gt; index_subquery &gt; range &gt; index &gt; ALL </code></p>
+<p>一般来说，得保证查询至少达到range级别，最好能达到ref。</p>
+<table>
+<thead>
+<tr>
+<th>类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>system</td>
+<td>表只有一行记录（等于系统表），这是const类型的特列，平时不会出现，这个也可以忽略不计</td>
+</tr>
+<tr>
+<td>const</td>
+<td>表示通过索引一次就找到了,const用于比较primary key或者unique索引。因为只匹配一行数据，所以很快;如将主键置于where列表中，MySQL就能将该查询转换为一个常量</td>
+</tr>
+<tr>
+<td>eq_ref</td>
+<td>唯一性索引扫描，对于每个索引键，表中只有一条记录与之匹配。常见于主键或唯一索引扫描</td>
+</tr>
+<tr>
+<td>ref</td>
+<td>非唯一性索引扫描，返回匹配某个单独值的所有行.本质上也是一种索引访问，它返回所有匹配某个单独值的行，然而，它可能会找到多个符合条件的行，所以他应该属于查找和扫描的混合体</td>
+</tr>
+<tr>
+<td>==range==</td>
+<td>只检索给定范围的行,使用一个索引来选择行。key 列显示使用了哪个索引;一般就是在你的where语句中出现了between、&lt;、&gt;、in等的查询;这种范围扫描索引扫描比全表扫描要好，因为它只需要开始于索引的某一点，而结束语另一点，不用扫描全部索引。</td>
+</tr>
+<tr>
+<td>==index==</td>
+<td>出现index是sql使用了索引但是没用通过索引进行过滤，一般是使用了覆盖索引或者是利用索引进行了排序分组</td>
+</tr>
+<tr>
+<td>==all==</td>
+<td>Full Table Scan，将遍历全表以找到匹配的行</td>
+</tr>
+<tr>
+<td>index_merge</td>
+<td>在查询过程中需要多个索引组合使用，通常出现在有 or 的关键字的sql中</td>
+</tr>
+<tr>
+<td>ref_or_null</td>
+<td>对于某个字段既需要关联条件，也需要null值得情况下。查询优化器会选择用ref_or_null连接查询。</td>
+</tr>
+<tr>
+<td>index_subquery</td>
+<td>利用索引来关联子查询，不再全表扫描</td>
+</tr>
+<tr>
+<td>unique_subquery</td>
+<td>该联接类型类似于index_subquery。 子查询中的唯一索引</td>
+</tr>
+</tbody></table>
+</li>
+<li><p><strong>==key_len==</strong>: 表示索引中使用的字节数，可通过该列计算查询中使用的索引的长度。 key_len字段能够帮你检查是否充分的利用上了索引,越大越好</p>
+</li>
+<li><p><strong>==rows==</strong>:rows列显示MySQL认为它执行查询时必须检查的行数。<br>越少越好</p>
+</li>
+<li><p><strong>key</strong>:实际使用的索引,如果为NULL,则没有使用索引; 查询中若使用了覆盖索引，则该索引和查询的select字段重叠</p>
+</li>
+<li><p><strong>==Extra==</strong>:包含不适合在其他列中显示但十分重要的额外信息</p>
+<table>
+<thead>
+<tr>
+<th>类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>==Using filesort==</td>
+<td>说明mysql会对数据使用一个外部的索引排序，而不是按照表内的索引顺序进行读取。MySQL中无法利用索引完成的排序操作称为“文件排序”  <strong>排序字段需要加索引</strong></td>
+</tr>
+<tr>
+<td>==Using temporay==</td>
+<td>使了用临时表保存中间结果,MySQL在对查询结果排序时使用临时表。常见于排序 order by 和分组查询 group by。<strong>分组字段需要加索引</strong></td>
+</tr>
+<tr>
+<td>USING index</td>
+<td>表示相应的select操作中使用了覆盖索引(Covering Index)，避免访问了表的数据行，效率不错！<br/>如果同时出现using where，表明索引被用来执行索引键值的查找;<br/>如果没有同时出现using where，表明索引只是用来读取数据而非利用索引执行查找。<br/>利用索引进行了排序或分组</td>
+</tr>
+<tr>
+<td>Using where</td>
+<td>表明使用了where过滤</td>
+</tr>
+<tr>
+<td>==using join buffer==</td>
+<td>使用了连接缓存,<strong>表之间的连接条件需要加索引</strong></td>
+</tr>
+<tr>
+<td>impossible where</td>
+<td>where子句的值总是false，不能用来获取任何元组,sql不正确的提醒</td>
+</tr>
+<tr>
+<td>select tables optimized away</td>
+<td>在没有GROUPBY子句的情况下，基于索引优化MIN/MAX操作或者<br/>对于MyISAM存储引擎优化COUNT(*)操作，不必等到执行阶段再进行计算，<br/>查询执行计划生成的阶段即完成优化。</td>
+</tr>
+</tbody></table>
+</li>
+<li><p><strong>ref</strong>:显示索引的哪一列被使用了，如果可能的话，是一个常数。哪些列或常量被用于查找索引列上的值</p>
+</li>
+<li><p><strong>select_type</strong>:查询的类型,主要是用于区别普通查询,联合查询,子查询等复杂查询</p>
+<table>
+<thead>
+<tr>
+<th>类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>SIMPLE</td>
+<td>简单的 select 查询,查询中不包含子查询或者UNION</td>
+</tr>
+<tr>
+<td>PRIMARY</td>
+<td>查询中若包含任何复杂的子部分，最外层查询则被标记为Primary</td>
+</tr>
+<tr>
+<td>DERIVED</td>
+<td>在FROM列表中包含的子查询被标记为DERIVED(衍生)MySQL会递归执行这些子查询, 把结果放在临时表里。</td>
+</tr>
+<tr>
+<td>SUBQUERY</td>
+<td>在SELECT或WHERE列表中包含了子查询</td>
+</tr>
+<tr>
+<td>DEPENDENT SUBQUERY</td>
+<td>在SELECT或WHERE列表中包含了子查询,子查询基于外层</td>
+</tr>
+<tr>
+<td>UNCACHEABLE SUBQUERY</td>
+<td>不能使用缓存的子查询,通常是使用系统变量作为WHERE条件的查询</td>
+</tr>
+<tr>
+<td>UNION</td>
+<td>若第二个SELECT出现在UNION之后，则被标记为UNION；若UNION包含在FROM子句的子查询中,外层SELECT将被标记为：DERIVED</td>
+</tr>
+<tr>
+<td>UNION RESULT</td>
+<td>从UNION表获取结果的SELECT</td>
+</tr>
+</tbody></table>
+</li>
+<li><p><strong>table</strong>:显示这一行的数据是关于那张表的</p>
+</li>
+<li><p><strong>partitions</strong>:代表分区表中命中情况,非区分表,该项为null</p>
+</li>
+<li><p><strong>possible_keys</strong>:显示可能应用在这张表中的索引，一个或多个。<br>查询涉及到的字段上若存在索引，则该索引将被列出，但不一定被查询实际使用</p>
+</li>
+</ul>
+<h3 id="如何正确的删除索引"><a href="#如何正确的删除索引" class="headerlink" title="如何正确的删除索引"></a>如何正确的删除索引</h3><p><strong>mysql索引存放在<code>information_schema</code>元数据库<code>STATISTICS</code>统计表中</strong></p>
+<p>取出某个表的索引</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> INDEX_NAME <span class="keyword">FROM</span> information_schema.statistics</span><br><span class="line"><span class="keyword">WHERE</span> TABLE_NAME=<span class="string">&#x27;t_emp&#x27;</span> <span class="keyword">AND</span> TABLE_SCHEMA=<span class="string">&#x27;mydb&#x27;</span></span><br><span class="line"><span class="keyword">AND</span> INDEX_NAME &lt;&gt; <span class="string">&#x27;PRIMARY&#x27;</span> <span class="keyword">AND</span> SEQ_IN_INDEX=<span class="number">1</span></span><br><span class="line"><span class="comment">#排除主键索引</span></span><br></pre></td></tr></table></figure>
+
+<p>如何遍历这个索引集合</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">CURSOR 游标</span><br><span class="line">FETCH xxx INTO xxx</span><br></pre></td></tr></table></figure>
+
+<p>如何让mysql执行一个字符串</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">PREPARE</span> 预编译 xxx</span><br><span class="line"><span class="keyword">EXECUTE</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>用存储过程实现</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">DELIMITER $$</span><br><span class="line"><span class="keyword">CREATE</span>  <span class="keyword">PROCEDURE</span> <span class="string">`proc_drop_index`</span>(dbname <span class="built_in">VARCHAR</span>(<span class="number">200</span>),tablename <span class="built_in">VARCHAR</span>(<span class="number">200</span>))</span><br><span class="line"><span class="keyword">BEGIN</span></span><br><span class="line">       <span class="keyword">DECLARE</span> done <span class="built_in">INT</span> <span class="keyword">DEFAULT</span> <span class="number">0</span>;</span><br><span class="line">       <span class="keyword">DECLARE</span> ct <span class="built_in">INT</span> <span class="keyword">DEFAULT</span> <span class="number">0</span>;</span><br><span class="line">       <span class="keyword">DECLARE</span> _index <span class="built_in">VARCHAR</span>(<span class="number">200</span>) <span class="keyword">DEFAULT</span> <span class="string">&#x27;&#x27;</span>;</span><br><span class="line">       <span class="keyword">DECLARE</span> _cur <span class="keyword">CURSOR</span> <span class="keyword">FOR</span>  <span class="keyword">SELECT</span>   index_name   <span class="keyword">FROM</span> information_schema.STATISTICS   <span class="keyword">WHERE</span> table_schema=dbname <span class="keyword">AND</span> table_name=tablename <span class="keyword">AND</span> seq_in_index=<span class="number">1</span> <span class="keyword">AND</span>    index_name &lt;&gt;<span class="string">&#x27;PRIMARY&#x27;</span>  ;</span><br><span class="line">       <span class="keyword">DECLARE</span>  CONTINUE <span class="keyword">HANDLER</span> <span class="keyword">FOR</span> <span class="keyword">NOT</span> <span class="keyword">FOUND</span> <span class="keyword">set</span> done=<span class="number">2</span> ;      </span><br><span class="line">        OPEN _cur;</span><br><span class="line">        FETCH   _cur INTO _index;</span><br><span class="line">        WHILE  _index&lt;&gt;&#x27;&#x27; DO </span><br><span class="line">               <span class="keyword">SET</span> @<span class="keyword">str</span> = <span class="keyword">CONCAT</span>(<span class="string">&quot;drop index &quot;</span>,_index,<span class="string">&quot; on &quot;</span>,tablename ); </span><br><span class="line">               <span class="keyword">PREPARE</span> sql_str <span class="keyword">FROM</span> @<span class="keyword">str</span> ;</span><br><span class="line">               <span class="keyword">EXECUTE</span>  sql_str;</span><br><span class="line">               <span class="keyword">DEALLOCATE</span> <span class="keyword">PREPARE</span> sql_str;</span><br><span class="line">               <span class="keyword">SET</span> _index=<span class="string">&#x27;&#x27;</span>; </span><br><span class="line">               FETCH   _cur INTO _index; </span><br><span class="line">        <span class="keyword">END</span> <span class="keyword">WHILE</span>;</span><br><span class="line">   CLOSE _cur;</span><br><span class="line">   <span class="keyword">END</span>$$</span><br></pre></td></tr></table></figure>
+
+<h3 id="索引注意事项"><a href="#索引注意事项" class="headerlink" title="索引注意事项"></a>索引注意事项</h3><p>导致索引失效的细节</p>
+<h4 id="全值匹配我最爱"><a href="#全值匹配我最爱" class="headerlink" title="全值匹配我最爱"></a>全值匹配我最爱</h4><p>where条件后的字段都应该建立索引, 达到最大索引命中</p>
+<h4 id="最佳左前缀法则"><a href="#最佳左前缀法则" class="headerlink" title="最佳左前缀法则"></a>最佳左前缀法则</h4><p>如果索引包含了多列，要遵守最左前缀法则。指的是查询从索引的最左前列开始并且不跳过索引中的列。</p>
+<h4 id="不在索引列上做任何操作"><a href="#不在索引列上做任何操作" class="headerlink" title="不在索引列上做任何操作"></a>不在索引列上做任何操作</h4><p>计算、函数、(自动or手动)类型转换，会导致索引失效而转向全表扫描,如下:</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">EXPLAIN</span>  <span class="keyword">SELECT</span> SQL_NO_CACHE * <span class="keyword">FROM</span> emp <span class="keyword">WHERE</span>   emp.name  <span class="keyword">LIKE</span> <span class="string">&#x27;abc%&#x27;</span> </span><br><span class="line"> </span><br><span class="line"><span class="keyword">EXPLAIN</span>   <span class="keyword">SELECT</span> SQL_NO_CACHE * <span class="keyword">FROM</span> emp <span class="keyword">WHERE</span>   <span class="keyword">LEFT</span>(emp.name,<span class="number">3</span>)  = <span class="string">&#x27;abc&#x27;</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="存储引擎不能使用索引中范围条件右边的列"><a href="#存储引擎不能使用索引中范围条件右边的列" class="headerlink" title="存储引擎不能使用索引中范围条件右边的列"></a>存储引擎不能使用索引中范围条件右边的列</h4><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">EXPLAIN</span> <span class="keyword">SELECT</span>  SQL_NO_CACHE * <span class="keyword">FROM</span> emp <span class="keyword">WHERE</span> emp.age=<span class="number">30</span> <span class="keyword">AND</span> emp.deptId&gt;<span class="number">20</span> <span class="keyword">AND</span> emp.name = <span class="string">&#x27;abc&#x27;</span>;</span><br><span class="line"><span class="comment">#需要保证范围查询的字段在最右边</span></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">INDEX</span> idx_age_name_deptid <span class="keyword">ON</span> emp(age,<span class="keyword">name</span>,deptId);</span><br></pre></td></tr></table></figure>
+
+<h4 id="mysql-在使用不等于-或者-lt-gt-的时候无法使用索引会导致全表扫描"><a href="#mysql-在使用不等于-或者-lt-gt-的时候无法使用索引会导致全表扫描" class="headerlink" title="mysql 在使用不等于(!= 或者&lt;&gt;)的时候无法使用索引会导致全表扫描"></a>mysql 在使用不等于(!= 或者&lt;&gt;)的时候无法使用索引会导致全表扫描</h4><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">EXPLAIN</span> <span class="keyword">SELECT</span> SQL_NO_CACHE * <span class="keyword">FROM</span> emp <span class="keyword">WHERE</span>   emp.name &lt;&gt;  <span class="string">&#x27;abc&#x27;</span>;</span><br></pre></td></tr></table></figure>
+
+<h4 id="is-not-null-无法使用索引-但是is-null可以使用索引"><a href="#is-not-null-无法使用索引-但是is-null可以使用索引" class="headerlink" title="is not null 无法使用索引,但是is null可以使用索引"></a>is not null 无法使用索引,但是is null可以使用索引</h4><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">EXPLAIN</span> <span class="keyword">SELECT</span> * <span class="keyword">FROM</span> emp <span class="keyword">WHERE</span> age <span class="keyword">IS</span> <span class="literal">NULL</span></span><br><span class="line"><span class="keyword">EXPLAIN</span> <span class="keyword">SELECT</span> * <span class="keyword">FROM</span> emp <span class="keyword">WHERE</span> age <span class="keyword">IS</span> <span class="keyword">NOT</span> <span class="literal">NULL</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="like以通配符开头-‘-abc…’-索引失效"><a href="#like以通配符开头-‘-abc…’-索引失效" class="headerlink" title="like以通配符开头(‘%abc…’)索引失效"></a>like以通配符开头(‘%abc…’)索引失效</h4><p>模糊查询最好明确首字母</p>
+<h4 id="字符串不加单引号索引失效"><a href="#字符串不加单引号索引失效" class="headerlink" title="字符串不加单引号索引失效"></a>字符串不加单引号索引失效</h4><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">EXPLAIN</span> <span class="keyword">SELECT</span> SQL_NO_CACHE * <span class="keyword">FROM</span> emp <span class="keyword">WHERE</span> emp.name=<span class="number">123</span></span><br></pre></td></tr></table></figure>
+
+<p>注意实体类中的字段类型要与mysql中一致,否则导致自动类型转换,索引失效</p>
+<h4 id="一般性建议"><a href="#一般性建议" class="headerlink" title="一般性建议"></a>一般性建议</h4><ul>
+<li>对于单键索引，尽量选择针对当前query过滤性更好的索引</li>
+<li>在选择组合索引的时候，当前Query中过滤性最好的字段在索引字段顺序中，位置越靠前越好。</li>
+<li>在选择组合索引的时候，尽量选择可以能够包含当前query中的where字句中更多字段的索引</li>
+<li>在选择组合索引的时候，如果某个字段可能出现范围查询时，尽量把这个字段放在索引次序的最后面</li>
+<li>书写sql语句时，尽量避免造成索引失效的情况</li>
+</ul>
+<h2 id="关联查询优化"><a href="#关联查询优化" class="headerlink" title="关联查询优化"></a>关联查询优化</h2><p><strong>驱动表与被驱动表</strong></p>
+<p>1.当使用left join时，左表是驱动表，右表是被驱动表<br>2.当使用right join时，右表时驱动表，左表是驱动表<br>3.当使用join时，mysql会选择数据量比较小的表作为驱动表，大表作为被驱动表</p>
+<p>在sql优化中，永远是以小表驱动大表</p>
+<p>join查询在有索引条件下:<br>驱动表有索引不会使用到索引<br>被驱动表建立索引会使用到索引</p>
+<p>MySQL 表关联的算法是 Nest Loop Join，是通过驱动表的结果集作为循环基础数据，然后一条一条地通过该结果集中的数据作为过滤条件到下一个表中查询数据，然后合并结果。</p>
+<p>驱动表的全表扫描是无法避免的,所以应该为被驱动表建立索引</p>
+<p>LEFT JOIN时 数据量小的表应该作为驱动表</p>
+<p>INNER JOIN时 mysql会自己选择驱动表</p>
+<p>子查询尽量不要放在被驱动表，有可能使用不到索引</p>
+<p>能够直接多表关联的尽量直接关联，不用子查询</p>
+<p>STRAIGHT_JOIN 功能和INNER JOIN一样,但可指定前面的表为驱动表,==注意需要明确两张表的数量集==</p>
+<h2 id="子查询优化"><a href="#子查询优化" class="headerlink" title="子查询优化"></a><strong>子查询优化</strong></h2><p> 尽量不要使用not in  或者 not exists<br> 用left outer join  on  xxx is null 替代</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> * <span class="keyword">FROM</span> emp a <span class="keyword">WHERE</span> a.id <span class="keyword">NOT</span> <span class="keyword">IN</span></span><br><span class="line">(<span class="keyword">SELECT</span> b.CEO <span class="keyword">FROM</span> dept b <span class="keyword">WHERE</span> b.CEO <span class="keyword">IS</span> <span class="keyword">NOT</span> <span class="literal">NULL</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> * <span class="keyword">FROM</span> emp a <span class="keyword">LEFT</span> <span class="keyword">JOIN</span> dept b <span class="keyword">ON</span> a.id = b.CEO</span><br><span class="line"><span class="keyword">WHERE</span> b.id <span class="keyword">IS</span> <span class="literal">NULL</span>;</span><br></pre></td></tr></table></figure>
+
+<h2 id="排序分组优化"><a href="#排序分组优化" class="headerlink" title="排序分组优化"></a>排序分组优化</h2><ul>
+<li>无过滤 不索引 where或limit</li>
+<li>顺序错，必排序(using filesort) 优化器不会调整排序字段的顺序</li>
+<li>方向反 必排序(using filesort) 多个排序字段,要么都升序,要么都降序</li>
+</ul>
+<p>当范围筛选条件和group by 或者 order by  的字段出现二选一时 ，==优先观察条件字段的过滤数量==，如果过滤的数据足够多，而需要排序的数据并不多时，优先把索引放在范围字段上。反之，亦然。</p>
+<p>原因是所有的排序都是在条件过滤之后才执行的，所以如果条件过滤了大部分数据的话，几百几千条数据进行排序其实并不是很消耗性能，即使索引优化了排序但实际提升性能很有限。  相对的范围筛选条件如果没有用到索引的话，要对几万条的数据进行扫描，这是非常消耗性能的</p>
+<p><strong>如果排序字段不在索引列上，filesort有两种算法：</strong><br>mysql就要启动双路排序和单路排序</p>
+<p><strong>双路排序</strong><br>MySQL 4.1之前是使用双路排序,字面意思就是两次扫描磁盘，最终得到数据，<br>读取行指针和orderby列，对他们进行排序，然后扫描已经排序好的列表，按照列表中的值重新从列表中读取对应的数据输出<br>从磁盘取排序字段，在buffer进行排序，再从磁盘取其他字段。<br>取一批数据，要对磁盘进行了两次扫描，众所周知，I\O是很耗时的，所以在mysql4.1之后，出现了第二种改进的算法，就是单路排序。</p>
+<p><strong>单路排序</strong><br>从磁盘读取查询需要的所有列，按照order by列在buffer对它们进行排序，然后扫描排序后的列表进行输出，<br>它的效率更快一些，避免了第二次读取数据。并且把随机IO变成了顺序IO,但是它会使用更多的空间，<br>因为它把每一行都保存在内存中了。</p>
+<p><strong>结论及引申出的问题</strong><br>由于单路是后出的，总体而言好过双路<br>但是用单路有问题</p>
+<p>在sort_buffer中，方法B比方法A要多占用很多空间，因为方法B是把所有字段都取出, 所以有可能取出的数据的总大小超出了sort_buffer的容量，导致每次只能取sort_buffer容量大小的数据，进行排序（创建tmp文件，多路合并），排完再取取sort_buffer容量大小，再排……从而多次I/O。</p>
+<p>本来想省一次I/O操作，反而导致了大量的I/O操作，反而得不偿失。</p>
+<p><strong>优化策略</strong></p>
+<ul>
+<li>增大sort_buffer_size参数的设置</li>
+<li>增大max_length_for_sort_data参数的设置</li>
+<li>减少select 后面的查询的字段。</li>
+</ul>
+<p><strong>Why</strong></p>
+<p>提高Order By的速度</p>
+<ol>
+<li><p>Order by时select * 是一个大忌只Query需要的字段， 这点非常重要。在这里的影响是：<br>1.1 当Query的字段大小总和小于max_length_for_sort_data 而且排序字段不是 TEXT|BLOB 类型时，会用改进后的算法——单路排序， 否则用老算法——多路排序。<br>  1.2 两种算法的数据都有可能超出sort_buffer的容量，超出之后，会创建tmp文件进行合并排序，导致多次I/O，但是用单路排序算法的风险会更大一些,所以要提高sort_buffer_size。</p>
+</li>
+<li><p>尝试提高 sort_buffer_size<br>不管用哪种算法，提高这个参数都会提高效率，当然，要根据系统的能力去提高，因为这个参数是针对每个进程的  1M-8M之间调整</p>
+</li>
+<li><p>尝试提高 max_length_for_sort_data<br>提高这个参数， 会增加用改进算法的概率。但是如果设的太高，数据总容量超出sort_buffer_size的概率就增大，明显症状是高的磁盘I/O活动和低的处理器使用率.   1024-8192之间调整</p>
+</li>
+</ol>
+<p><strong>GROUP BY优化</strong></p>
+<p> group by 使用索引的原则几乎跟order by一致 ，唯一区别是group by 即使没有过滤条件用到索引，也可以直接使用索引。</p>
+<p><strong>最后使用索引的手段：覆盖索引</strong></p>
+<p>什么是覆盖索引？<br>简单说就是，select 到 from 之间查询的列 &lt;=使用的索引列+主键</p>
+<p>所以最好不要使用<code>select *</code>使用明确的字段,可以使用覆盖索引</p>
+<p><strong>分析GROUP BY 与临时表的关系 :</strong></p>
+<p>　　1. 如果GROUP BY 的列没有索引,产生临时表.<br>　　2. 如果GROUP BY时,SELECT的列不止GROUP BY列一个,并且GROUP BY的列不是主键 ,产生临时表.<br>　　3. 如果GROUP BY的列有索引,ORDER BY的列没索引.产生临时表.<br>　　4. 如果GROUP BY的列和ORDER BY的列不一样,即使都有索引也会产生临时表.<br>　　5. 如果GROUP BY或ORDER BY的列不是来自JOIN语句第一个表.会产生临时表.<br>　　6. 如果DISTINCT 和 ORDER BY的列没有索引,产生临时表.</p>
+<h2 id="查询截取分析"><a href="#查询截取分析" class="headerlink" title="查询截取分析"></a>查询截取分析</h2><p>一年之后系统变慢怎么优化?</p>
+<p>开启慢查询日志一周~两周(运维),通过日志分析工具mysqldumpslow针对对访问量多的数据和慢查询进行建立索引优化</p>
+<h3 id="慢查询日志"><a href="#慢查询日志" class="headerlink" title="慢查询日志"></a>慢查询日志</h3><p>MySQL的慢查询日志是MySQL提供的一种日志记录，它用来记录在MySQL中响应时间超过阀值的语句，具体指运行时间超过long_query_time值的SQL，则会被记录到慢查询日志中。</p>
+<p>具体指运行时间超过long_query_time值的SQL，则会被记录到慢查询日志中。long_query_time的默认值为10，意思是运行10秒以上的语句。</p>
+<p>由他来查看哪些SQL超出了我们的最大忍耐时间值，比如一条sql执行超过5秒钟，我们就算慢SQL，希望能收集超过5秒的sql，结合之前explain进行全面分析。</p>
+<p>默认情况下slow_query_log的值为OFF，表示慢查询日志是禁用的，<br>可以通过设置slow_query_log的值来开启</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SHOW</span> <span class="keyword">VARIABLES</span> <span class="keyword">LIKE</span> <span class="string">&#x27;%slow_query_log%&#x27;</span>;</span><br></pre></td></tr></table></figure>
+
+<p>开启慢查询日志只对当前数据库生效，如果MySQL重启后则会失效</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">set</span> <span class="keyword">global</span> slow_query_log=<span class="number">1</span></span><br></pre></td></tr></table></figure>
+
+<p>如果要永久生效，就必须修改配置文件my.cnf（其它系统变量也是如此）</p>
+<p>修改my.cnf文件，[mysqld]下增加或修改参数,然后重启MySQL服务器。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">slow_query_log =1</span><br><span class="line">slow_query_log_file=/var/lib/mysql/atguigu-slow.log</span><br></pre></td></tr></table></figure>
+
+<p>slow_query_log_file ，它指定慢查询日志文件的存放路径，系统默认会给一个缺省的文件host_name-slow.log</p>
+<p>开启慢查询日志后.指定慢查询的时间阈值<code>long_query_time</code>，默认情况下long_query_time的值为10秒，</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SHOW</span> <span class="keyword">VARIABLES</span> <span class="keyword">LIKE</span> <span class="string">&#x27;long_query_time%&#x27;</span>;</span><br></pre></td></tr></table></figure>
+
+<p>可以使用命令修改，也可以在my.cnf参数里面修改</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">set</span> long_query_time= <span class="number">0.2</span></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">my.cnf</span></span><br><span class="line"><span class="attr">slow_query_log</span>=<span class="string">1</span></span><br><span class="line"><span class="attr">slow_query_log_file</span>=<span class="string">/var/lib/mysql/atguigu-slow.log</span></span><br><span class="line"><span class="attr">long_query_time</span>=<span class="string">3</span></span><br><span class="line"><span class="attr">log_output</span>=<span class="string">FILE</span></span><br></pre></td></tr></table></figure>
+
+<p>在生产环境中，如果要手工分析日志，查找、分析SQL，显然是个体力活，MySQL提供了日志分析工具<strong>mysqldumpslow</strong>。</p>
+<p>mysqldumpslow –help</p>
+<p><img src="https://i.loli.net/2020/05/17/ZDLJeMaknrRclFx.png" alt="image-20200404101552012"></p>
+<p>-a: 不将数字抽象成N，字符串抽象成S<br>-s: 是表示按照何种方式排序；<br>c: 访问次数<br>l: 锁定时间<br>r: 返回记录<br>t: 查询时间<br>al:平均锁定时间<br>ar:平均返回记录数<br>at:平均查询时间<br>-t:即为返回前面多少条的数据；<br>-g:后边搭配一个正则匹配模式，大小写不敏感的；</p>
+<p>常用参考:</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">得到返回记录集最多的10个SQL</span><br><span class="line">mysqldumpslow -s r -t 10 /var/lib/mysql/atguigu-slow.log</span><br><span class="line"> </span><br><span class="line">得到访问次数最多的10个SQL</span><br><span class="line">mysqldumpslow -s c -t 10 /var/lib/mysql/atguigu-slow.log</span><br><span class="line"> </span><br><span class="line">得到按照时间排序的前10条里面含有左连接的查询语句</span><br><span class="line">mysqldumpslow -s t -t 10 -g &quot;left join&quot; /var/lib/mysql/atguigu-slow.log</span><br><span class="line"> </span><br><span class="line">另外建议在使用这些命令时结合 | 和more 使用 ，否则有可能出现爆屏情况</span><br><span class="line">mysqldumpslow -s r -t 10 /var/lib/mysql/atguigu-slow.log | more</span><br></pre></td></tr></table></figure>
+
+<p><strong>SHOW PROCESSLIST</strong></p>
+<p>显示进程列表</p>
+<p>能干什么：查询所有用户正在干什么<br>如果出现不顺眼的<br>kill [id]</p>
+<h1 id="视图"><a href="#视图" class="headerlink" title="视图"></a>视图</h1><p>是什么<br>  将一段查询sql封装为一个虚拟的表。<br>  这个虚拟表只保存了sql逻辑，不会保存任何查询结果。<br>作用<br>  1、封装复杂sql语句，提高复用性<br>  2、逻辑放在数据库上面，更新不需要发布程序，面对频繁的需求变更更灵活<br>适用场景<br>  很多地方可以共用的一组查询结果<br>  报表统计数据经常变化,将统计sql封装到一个视图中,与程序解耦</p>
+<p>创建</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">VIEW</span> view_name </span><br><span class="line"><span class="keyword">AS</span></span><br><span class="line"><span class="keyword">SELECT</span> column_name(s)</span><br><span class="line"><span class="keyword">FROM</span> table_name</span><br><span class="line"><span class="keyword">WHERE</span> condition</span><br></pre></td></tr></table></figure>
+
+<p>使用</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> * <span class="keyword">from</span> view_name</span><br></pre></td></tr></table></figure>
+
+<p>更新</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">OR</span> <span class="keyword">REPLACE</span> <span class="keyword">VIEW</span> view_name </span><br><span class="line"><span class="keyword">AS</span></span><br><span class="line"><span class="keyword">SELECT</span> column_name(s)</span><br><span class="line"><span class="keyword">FROM</span> table_name</span><br><span class="line"><span class="keyword">WHERE</span> condition</span><br></pre></td></tr></table></figure>
+
+<p>注意事项(适用5.5)<br>  mysql的视图中不允许有from 后面的子查询，但oracle可以</p>
+<h1 id="主从复制"><a href="#主从复制" class="headerlink" title="主从复制"></a>主从复制</h1><p><strong>复制的基本原理:</strong></p>
+<p><img src="https://i.loli.net/2020/05/17/b4milnOG7FyAYN3.png" alt="image-20200404103947713"></p>
+<p> MySQL复制过程分成三步：<br>1 master将改变记录到二进制日志（binary log）。这些记录过程叫做二进制日志事件，binary log events；<br>2 slave将master的binary log events拷贝到它的中继日志（relay log）；<br>3 slave重做中继日志中的事件，将改变应用到自己的数据库中。 MySQL复制是异步的且串行化的</p>
+<p><strong>复制的基本原则</strong><br>  每个slave只有一个master<br>  每个slave只能有一个唯一的服务器ID<br>  每个master可以有多个salve</p>
+<p><strong>复制的最大问题:IO多,延时</strong></p>
+<h2 id="一主一丛常见配置"><a href="#一主一丛常见配置" class="headerlink" title="一主一丛常见配置"></a>一主一丛常见配置</h2><p>mysql版本一致且后台以服务运行<br>主从都配置在<code>[mysqld]</code>结点下，都是小写</p>
+<p><strong>主机</strong>修改my.ini配置文件</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">主服务器唯一ID</span><br><span class="line"> 	server-id&#x3D;1</span><br><span class="line">启用二进制日志</span><br><span class="line">    log-bin&#x3D;自己本地的路径&#x2F;data&#x2F;mysqlbin</span><br><span class="line">    log-bin&#x3D;D:&#x2F;devSoft&#x2F;MySQLServer5.5&#x2F;data&#x2F;mysqlbin</span><br><span class="line">设置不要复制的数据库</span><br><span class="line">    binlog-ignore-db&#x3D;mysql</span><br><span class="line">设置需要复制的数据库</span><br><span class="line">    binlog-do-db&#x3D;需要复制的主数据库名字</span><br><span class="line">设置logbin格式</span><br><span class="line">    binlog_format&#x3D;STATEMENT（默认）</span><br></pre></td></tr></table></figure>
+
+<p>mysql主从复制起始时，从机不继承主机数据</p>
+<p><img src="https://i.loli.net/2020/05/19/YmNDORcWilqZ7TU.png" alt="image-20200404104751055"></p>
+<p>从机配置文件修改my.cnf的[mysqld]栏位下</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">server-id &#x3D; 2</span><br><span class="line">relay-log&#x3D;mysql-relay</span><br></pre></td></tr></table></figure>
+
+<p>因修改过配置文件，请主机+从机都重启后台mysql服务,<br>主机从机都关闭防火墙</p>
+<p>主机创建一个用户授权复制权限</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">GRANT</span> <span class="keyword">REPLICATION</span> <span class="keyword">SLAVE</span> <span class="keyword">ON</span> *.* <span class="keyword">TO</span> <span class="string">&#x27;slave200404&#x27;</span>@<span class="string">&#x27;%&#x27;</span> <span class="keyword">IDENTIFIED</span> <span class="keyword">BY</span> <span class="string">&#x27;123456&#x27;</span>;</span><br></pre></td></tr></table></figure>
+
+<p>查看主机状态</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">SHOW MASTER STATUS;</span><br><span class="line">|File          | Positon | Binlog_Do_DB |Binlog_lgnore_DB</span><br><span class="line">mysqlbin.000001	   107	   mydb_200404	  mysql</span><br></pre></td></tr></table></figure>
+
+<p>File:日志文件</p>
+<p>Postion:接入点</p>
+<p>Binlog_Do_DB:要复制的数据库</p>
+<p>Binlog_lgnore_DB:不要复制的数据库</p>
+<p>从机对照主机状态拜大哥</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">CHANGE MASTER TO MASTER_HOST&#x3D;&#39;192.168.0.104&#39;,</span><br><span class="line">MASTER_USER&#x3D;&#39;slave200404&#39;,</span><br><span class="line">MASTER_PASSWORD&#x3D;&#39;123456&#39;,</span><br><span class="line">MASTER_LOG_FILE&#x3D;&#39;mysqlbin.000001&#39;,MASTER_LOG_POS&#x3D;107;</span><br></pre></td></tr></table></figure>
+
+<p>如果之前做过需要先停止再设置</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">stop slave;</span><br><span class="line">reset master;</span><br></pre></td></tr></table></figure>
+
+<p>启动从服务器复制功能</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">start slave;</span><br></pre></td></tr></table></figure>
+
+<p>查看主从配置状态</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">show slave status\G;</span><br><span class="line"></span><br><span class="line">Slave_IO_Running: Yes</span><br><span class="line">Slave_SQL_Running: Yes</span><br><span class="line">成功</span><br></pre></td></tr></table></figure>
+
+<p>主机创建相应的数据库</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">DATABASE</span> mydb_200404;</span><br></pre></td></tr></table></figure>
+
+<p>刷新从机出现数据库成功</p>
+<h2 id="MyCat"><a href="#MyCat" class="headerlink" title="MyCat"></a>MyCat</h2><p>数据库中间件,前身是阿里的cobar,仅可以用作读写分离、以及分表分库、多数据源整合,容灾备份</p>
+<p><strong>基本原理:</strong></p>
+<p> Mycat 的原理中最重要的一个动词是“拦截”，它拦截了用户发送过来的 SQL 语句，首先对 SQL 语句做了<br>一些特定的分析：如分片分析、路由分析、读写分离分析、缓存分析等，然后将此 SQL 发往后端的真实数据库，<br>并将返回的结果做适当的处理，最终再返回给用户</p>
+<p><img src="https://i.loli.net/2020/05/19/FpZWhv6ry5aHjQg.png" alt="image-20200404135415788"></p>
+<p>这种方式把数据库的分布式从代码中解耦出来，Mycat是代理，Mycat后面就是物理数据库。和Web服务器的Nginx类似。对于使用者来说，访问的都是Mycat，不会接触到后端的数据库。</p>
+<p><strong>概念</strong>:</p>
+<p>0、逻辑库/表：mycat中存在的库和表</p>
+<p>1、分片表：原本有大量数据的表</p>
+<p>2、ER表：关系表</p>
+<p>3、全局表：类似于字典表这种表，字典表和很多表都有关联，mycat采用数据冗余存储</p>
+<p>4、分片节点（dataNode）：一张大表分为多个数据库上，每个数据库就是分片节点</p>
+<p>5、分片主机（dataHost）：分片节点可以在不同的主机，一个或者多个节点所在的主机就是分片主机</p>
+<p>6、分片规则（rule）：数据划分的规则</p>
+<p>7、全局序列号：数据切分后原本的主键就无法使用了，因此需要引入一个值保证数据唯一性。</p>
+<p>8、多租户（很重要）：多个环境下公用相同的系统，并且保证隔离性</p>
+<p>​    8-1：独立数据库，隔离性高，但是代价比较庞大</p>
+<p>​    8-2：共享一个数据库，不是完全隔离，隔离性不高，容易出错</p>
+<p>​    8-3：共用数据结构，数据架构，通过ID进行区分租户数据（也就是用mycat）</p>
+<h2 id="数据分片"><a href="#数据分片" class="headerlink" title="数据分片"></a><strong>数据分片</strong></h2><p>简单来说，就是指通过某种特定的条件，将我们存放在同一个数据库中的数据分散存放到多个数据库（主机）<br>上面，以达到分散单台设备负载的效果</p>
+<p>数据的切分（Sharding）根据其切分规则的类型，可以分为两种切分模式。一种是按照业务将表进行分类（或者<br>Schema）来切分到不同的数据库（主机）之上，这种切可以称之为数据的垂直（纵向）切分；</p>
+<p>另外一种则是根据表中的数据的逻辑关系按照某个字段的某种规则，将同一个表中的数据按照某种条件拆分到多台数据库（主机）上面，这种切分称之为数据的水平（横向）切分。</p>
+<h2 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h2><p>linux 下可以下载 Mycat-server-xxxxx.linux.tar.gz 解压拷贝mycat目录到<code>/usr/local</code>目录</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">cp -r mycat &#x2F;usr&#x2F;local</span><br></pre></td></tr></table></figure>
+
+<p>目录如下：</p>
+<table>
+<thead>
+<tr>
+<th>目录</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>bin</td>
+<td>mycat命令，启动、重启、停止等</td>
+</tr>
+<tr>
+<td>catlet</td>
+<td>catlet为Mycat的一个扩展功能</td>
+</tr>
+<tr>
+<td>conf</td>
+<td>Mycat 配置信息,重点关注</td>
+</tr>
+<tr>
+<td>lib</td>
+<td>Mycat引用的jar包，Mycat是java开发的</td>
+</tr>
+<tr>
+<td>logs</td>
+<td>日志文件，包括Mycat启动的日志和运行的日志。</td>
+</tr>
+</tbody></table>
+<p>配置文件:</p>
+<table>
+<thead>
+<tr>
+<th>文件</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>server.xml</td>
+<td>Mycat的配置文件，设置账号、参数等</td>
+</tr>
+<tr>
+<td>schema.xml</td>
+<td>Mycat对应的物理数据库和数据库表的配置</td>
+</tr>
+<tr>
+<td>rule.xml</td>
+<td>Mycat分片（分库分表）规则</td>
+</tr>
+</tbody></table>
+<p><strong>schema.xml</strong><br>定义逻辑库，表、分片节点等内容</p>
+<p>将<code>&lt;/schema&gt;</code>中的内容删除,并加上<code>dataNode=&quot;dn1&quot;</code>属性指定数据节点名称</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">mycat:schema</span> <span class="attr">xmlns:mycat</span>=<span class="string">&quot;http://io.mycat/&quot;</span>&gt;</span></span><br><span class="line"><span class="comment">&lt;!--逻辑库    name名称,   checkSQLschema SQL检查优化       sqlMaxLimit 末尾是否要加 limit xxx--&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">schema</span> <span class="attr">name</span>=<span class="string">&quot;TESTDB&quot;</span> <span class="attr">checkSQLschema</span>=<span class="string">&quot;false&quot;</span> <span class="attr">sqlMaxLimit</span>=<span class="string">&quot;100&quot;</span> <span class="attr">dataNode</span>=<span class="string">&quot;dn1&quot;</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">schema</span>&gt;</span></span><br><span class="line">    <span class="comment">&lt;!--逻辑库    name名称,   dataHost 引用的哪个dataHost      database:对应mysql的database--&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">dataNode</span> <span class="attr">name</span>=<span class="string">&quot;dn1&quot;</span> <span class="attr">dataHost</span>=<span class="string">&quot;host1&quot;</span> <span class="attr">database</span>=<span class="string">&quot;mydb_200404&quot;</span> /&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">dataHost</span> <span class="attr">name</span>=<span class="string">&quot;host1&quot;</span> <span class="attr">maxCon</span>=<span class="string">&quot;1000&quot;</span> <span class="attr">minCon</span>=<span class="string">&quot;10&quot;</span> <span class="attr">balance</span>=<span class="string">&quot;0&quot;</span></span></span><br><span class="line"><span class="tag">                          <span class="attr">writeType</span>=<span class="string">&quot;0&quot;</span> <span class="attr">dbType</span>=<span class="string">&quot;mysql&quot;</span> <span class="attr">dbDriver</span>=<span class="string">&quot;native&quot;</span> <span class="attr">switchType</span>=<span class="string">&quot;1&quot;</span>  <span class="attr">slaveThreshold</span>=<span class="string">&quot;100&quot;</span>&gt;</span></span><br><span class="line">            	<span class="comment">&lt;!-- 心跳检测 --&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">heartbeat</span>&gt;</span>select user()<span class="tag">&lt;/<span class="name">heartbeat</span>&gt;</span></span><br><span class="line">                <span class="comment">&lt;!-- 写主机 can have multi write hosts --&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">writeHost</span> <span class="attr">host</span>=<span class="string">&quot;hostM1&quot;</span> <span class="attr">url</span>=<span class="string">&quot;192.168.0.104:3306&quot;</span> <span class="attr">user</span>=<span class="string">&quot;root&quot;</span></span></span><br><span class="line"><span class="tag">                                   <span class="attr">password</span>=<span class="string">&quot;000000&quot;</span>&gt;</span></span><br><span class="line">                        <span class="comment">&lt;!-- 读主机 can have multi read hosts --&gt;</span></span><br><span class="line">                        <span class="tag">&lt;<span class="name">readHost</span> <span class="attr">host</span>=<span class="string">&quot;hostS1&quot;</span> <span class="attr">url</span>=<span class="string">&quot;192.168.107.108:3306&quot;</span> <span class="attr">user</span>=<span class="string">&quot;root&quot;</span> <span class="attr">password</span>=<span class="string">&quot;000000&quot;</span> /&gt;</span></span><br><span class="line">                <span class="tag">&lt;/<span class="name">writeHost</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">dataHost</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">mycat:schema</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>schema:</strong></p>
+<table>
+<thead>
+<tr>
+<th>属性</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>name</td>
+<td>逻辑数据库名，与server.xml中的schema对应</td>
+</tr>
+<tr>
+<td>checkSQLschema</td>
+<td>数据库前缀相关设置，建议看文档，这里暂时设为false</td>
+</tr>
+<tr>
+<td>sqlMaxLimit</td>
+<td>select 时默认的limit，避免查询全表</td>
+</tr>
+</tbody></table>
+<p><strong>table:</strong></p>
+<table>
+<thead>
+<tr>
+<th>属性</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>name</td>
+<td>表名，物理数据库中表名</td>
+</tr>
+<tr>
+<td>dataNode</td>
+<td>表存储到哪些节点，多个节点用逗号分隔。节点为下文dataNode设置的name</td>
+</tr>
+<tr>
+<td>primaryKey</td>
+<td>主键字段名，自动生成主键时需要设置</td>
+</tr>
+<tr>
+<td>autoIncrement</td>
+<td>是否自增</td>
+</tr>
+<tr>
+<td>rule</td>
+<td>分片规则名，具体规则下文rule详细介绍</td>
+</tr>
+</tbody></table>
+<p><strong>dataNode</strong></p>
+<table>
+<thead>
+<tr>
+<th>属性</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>name</td>
+<td>节点名，与table中dataNode对应</td>
+</tr>
+<tr>
+<td>datahost</td>
+<td>物理数据库名，与datahost中name对应</td>
+</tr>
+<tr>
+<td>database</td>
+<td>物理数据库中数据库名</td>
+</tr>
+</tbody></table>
+<p><strong>dataHost</strong></p>
+<table>
+<thead>
+<tr>
+<th>属性</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>name</td>
+<td>物理数据库名，与dataNode中dataHost对应</td>
+</tr>
+<tr>
+<td>balance</td>
+<td>均衡负载的方式</td>
+</tr>
+<tr>
+<td>writeType</td>
+<td>写入方式</td>
+</tr>
+<tr>
+<td>dbType</td>
+<td>数据库类型</td>
+</tr>
+<tr>
+<td>heartbeat</td>
+<td>心跳检测语句，注意语句结尾的分号要加。</td>
+</tr>
+</tbody></table>
+<p><strong>server.xml</strong><br>配置mycat用户名密码</p>
+<p>schemas:数据库名，这里会和schema.xml中的配置关联，多个用逗号分开，例如需要这个用户需要管理两个数据库db1,db2，则配置db1,db2</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">#修改用户名和mysql区分开</span><br><span class="line"><span class="tag">&lt;<span class="name">user</span> <span class="attr">name</span>=<span class="string">&quot;mycat&quot;</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;password&quot;</span>&gt;</span>123456<span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;schemas&quot;</span>&gt;</span>TESTDB<span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>验证数据库访问情况</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">mysql -uroot -p123123 -h 192.168.154.1 -P 3306</span><br><span class="line">mysql -uroot -p123123 -h 192.168.154.154 -P 3306</span><br><span class="line"></span><br><span class="line">如本机远程访问报错，请建对应用户</span><br><span class="line">grant all privileges on *.* to hzy@&#39;%&#39;  identified by &#39;000000&#39;;</span><br></pre></td></tr></table></figure>
+
+<p><strong>启动程序</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">控制台启动 ：去mycat&#x2F;bin 目录下 mycat console</span><br><span class="line">后台启动 ：去mycat&#x2F;bin 目录下 mycat start</span><br></pre></td></tr></table></figure>
+
+<p><strong>登录</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">后台管理窗口(运维)</span><br><span class="line">    mysql -umycat -p654321 -P9066 -h192.168.67.131</span><br><span class="line">命令</span><br><span class="line">	show database</span><br><span class="line">    show @@help</span><br><span class="line">数据窗口(开发)</span><br><span class="line">    mysql -umycat -p123456 -P8066 -h192.168.107.108</span><br><span class="line">连接方式和普通数据库一样，如：jdbc:mysql:&#x2F;&#x2F;192.168.0.2:8066&#x2F;</span><br></pre></td></tr></table></figure>
+
+<p>如果在启动时发现异常，在logs目录中查看日志。</p>
+<ul>
+<li>wrapper.log 为程序启动的日志，启动时的问题看这个</li>
+<li>mycat.log 为脚本执行时的日志，SQL脚本执行报错后的具体错误内容,查看这个文件。mycat.log是最新的错误日志，历史日志会根据时间生成目录保存。</li>
+</ul>
+<p>查看库表</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"> show databases;</span><br><span class="line">+----------+</span><br><span class="line">| DATABASE |</span><br><span class="line">+----------+</span><br><span class="line">| TESTDB   |</span><br><span class="line">+----------+</span><br><span class="line"></span><br><span class="line">mysql&gt; use TESTDB;</span><br><span class="line"></span><br><span class="line">mysql&gt; show tables;</span><br><span class="line">+-----------------------+</span><br><span class="line">| Tables_in_mydb_200404 |</span><br><span class="line">+-----------------------+</span><br><span class="line">| mytable               |</span><br><span class="line">+-----------------------+</span><br></pre></td></tr></table></figure>
+
+<h2 id="读写分离"><a href="#读写分离" class="headerlink" title="读写分离"></a>读写分离</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">负载均衡类型，目前的取值有4 种：</span><br><span class="line">1. balance&#x3D;&quot;0&quot;, 不开启读写分离机制，所有读操作都发送到当前可用的 writeHost 上。</span><br><span class="line">2. balance&#x3D;&quot;1&quot;，全部的 readHost 与 stand by writeHost 参与 select 语句的负载均衡，简单的说，当双主双从模式(M1-&gt;S1，M2-&gt;S2，并且 M1 与 M2 互为主备)，正常情况下，M2,S1,S2 都参与 select 语句的负载均衡。</span><br><span class="line">3. balance&#x3D;&quot;2&quot;，所有读操作都随机的在 writeHost、readhost 上分发。</span><br><span class="line">4. balance&#x3D;&quot;3&quot;，所有读请求随机的分发到 readhost 执行，writerHost 不负担读压力</span><br><span class="line"> &lt;dataHost name&#x3D;&quot;host1&quot; maxCon&#x3D;&quot;1000&quot; minCon&#x3D;&quot;10&quot; balance&#x3D;&quot;2&quot;</span><br></pre></td></tr></table></figure>
+
+<p>在主机执行</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">INSERT mytable(id,&#96;name&#96;) VALUES(2,@@hostname);</span><br></pre></td></tr></table></figure>
+
+<p>重启mycat,再查询</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">+------+------------+</span><br><span class="line">| id   | name       |</span><br><span class="line">+------+------------+</span><br><span class="line">|    1 | stig       |</span><br><span class="line">|    2 | dockerhost |</span><br><span class="line">+------+------------+</span><br><span class="line">2 rows in set (0.01 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; select * from mytable;</span><br><span class="line">+------+----------------+</span><br><span class="line">| id   | name           |</span><br><span class="line">+------+----------------+</span><br><span class="line">|    1 | stig           |</span><br><span class="line">|    2 | HUAWEIMatebook |</span><br><span class="line">+------+----------------+</span><br><span class="line">2 rows in set (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; select * from mytable;</span><br><span class="line">+------+------------+</span><br><span class="line">| id   | name       |</span><br><span class="line">+------+------------+</span><br><span class="line">|    1 | stig       |</span><br><span class="line">|    2 | dockerhost |</span><br><span class="line">+------+------------+</span><br></pre></td></tr></table></figure>
+
+<h2 id="分库"><a href="#分库" class="headerlink" title="分库"></a>分库</h2><p>按照业务将表进行分类,不需要join关系的表分开</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">mycat:schema</span> <span class="attr">xmlns:mycat</span>=<span class="string">&quot;http://io.mycat/&quot;</span>&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">&lt;!-- 数据库配置，与server.xml中的数据库对应--&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">schema</span> <span class="attr">name</span>=<span class="string">&quot;TESTDB&quot;</span> <span class="attr">checkSQLschema</span>=<span class="string">&quot;false&quot;</span> <span class="attr">sqlMaxLimit</span>=<span class="string">&quot;100&quot;</span>&gt;</span></span><br><span class="line">                <span class="comment">&lt;!-- 配置表分到哪个数据节点 --&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">table</span> <span class="attr">name</span>=<span class="string">&quot;customer&quot;</span> <span class="attr">dataNode</span>=<span class="string">&quot;dn2&quot;</span> &gt;</span><span class="tag">&lt;/<span class="name">table</span>&gt;</span></span><br><span class="line">            	<span class="tag">&lt;<span class="name">table</span> <span class="attr">name</span>=<span class="string">&quot;orders&quot;</span> <span class="attr">dataNode</span>=<span class="string">&quot;dn1&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">table</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">schema</span>&gt;</span></span><br><span class="line">        <span class="comment">&lt;!-- 分片配置 --&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">dataNode</span> <span class="attr">name</span>=<span class="string">&quot;dn1&quot;</span> <span class="attr">dataHost</span>=<span class="string">&quot;host1&quot;</span> <span class="attr">database</span>=<span class="string">&quot;orders__200405&quot;</span> /&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">dataNode</span> <span class="attr">name</span>=<span class="string">&quot;dn2&quot;</span> <span class="attr">dataHost</span>=<span class="string">&quot;host2&quot;</span> <span class="attr">database</span>=<span class="string">&quot;orders_200405&quot;</span> /&gt;</span></span><br><span class="line">    </span><br><span class="line">       <span class="comment">&lt;!-- 物理数据库配置 --&gt;</span></span><br><span class="line">       <span class="comment">&lt;!--balance=&quot;0&quot;不配置读写分离 --&gt;</span></span><br><span class="line">       <span class="tag">&lt;<span class="name">dataHost</span> <span class="attr">name</span>=<span class="string">&quot;host1&quot;</span> <span class="attr">maxCon</span>=<span class="string">&quot;1000&quot;</span> <span class="attr">minCon</span>=<span class="string">&quot;10&quot;</span> <span class="attr">balance</span>=<span class="string">&quot;0&quot;</span></span></span><br><span class="line"><span class="tag">                          <span class="attr">writeType</span>=<span class="string">&quot;0&quot;</span> <span class="attr">dbType</span>=<span class="string">&quot;mysql&quot;</span> <span class="attr">dbDriver</span>=<span class="string">&quot;native&quot;</span> <span class="attr">switchType</span>=<span class="string">&quot;1&quot;</span>  <span class="attr">slaveThreshold</span>=<span class="string">&quot;100&quot;</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">heartbeat</span>&gt;</span>select user()<span class="tag">&lt;/<span class="name">heartbeat</span>&gt;</span></span><br><span class="line">                <span class="comment">&lt;!-- can have multi write hosts --&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">writeHost</span> <span class="attr">host</span>=<span class="string">&quot;hostM1&quot;</span> <span class="attr">url</span>=<span class="string">&quot;192.168.0.104:3306&quot;</span> <span class="attr">user</span>=<span class="string">&quot;root&quot;</span></span></span><br><span class="line"><span class="tag">                                   <span class="attr">password</span>=<span class="string">&quot;000000&quot;</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;/<span class="name">writeHost</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">dataHost</span>&gt;</span></span><br><span class="line">        </span><br><span class="line"><span class="tag">&lt;<span class="name">dataHost</span> <span class="attr">name</span>=<span class="string">&quot;host2&quot;</span> <span class="attr">maxCon</span>=<span class="string">&quot;1000&quot;</span> <span class="attr">minCon</span>=<span class="string">&quot;10&quot;</span> <span class="attr">balance</span>=<span class="string">&quot;0&quot;</span></span></span><br><span class="line"><span class="tag">                          <span class="attr">writeType</span>=<span class="string">&quot;0&quot;</span> <span class="attr">dbType</span>=<span class="string">&quot;mysql&quot;</span> <span class="attr">dbDriver</span>=<span class="string">&quot;native&quot;</span> <span class="attr">switchType</span>=<span class="string">&quot;1&quot;</span>  <span class="attr">slaveThreshold</span>=<span class="string">&quot;100&quot;</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">heartbeat</span>&gt;</span>select user()<span class="tag">&lt;/<span class="name">heartbeat</span>&gt;</span></span><br><span class="line">                <span class="comment">&lt;!-- can have multi write hosts --&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">writeHost</span> <span class="attr">host</span>=<span class="string">&quot;hostM2&quot;</span> <span class="attr">url</span>=<span class="string">&quot;192.168.107.108:3306&quot;</span> <span class="attr">user</span>=<span class="string">&quot;hzy&quot;</span></span></span><br><span class="line"><span class="tag">                                   <span class="attr">password</span>=<span class="string">&quot;000000&quot;</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;/<span class="name">writeHost</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">dataHost</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;/<span class="name">mycat:schema</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="水平分表"><a href="#水平分表" class="headerlink" title="水平分表"></a>水平分表</h2><p>schema.xml</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">mycat:schema</span> <span class="attr">xmlns:mycat</span>=<span class="string">&quot;http://io.mycat/&quot;</span>&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">&lt;!-- 数据库配置，与server.xml中的数据库对应--&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">schema</span> <span class="attr">name</span>=<span class="string">&quot;TESTDB&quot;</span> <span class="attr">checkSQLschema</span>=<span class="string">&quot;false&quot;</span> <span class="attr">sqlMaxLimit</span>=<span class="string">&quot;100&quot;</span>&gt;</span></span><br><span class="line">                <span class="comment">&lt;!-- 配置表分到哪个数据节点 --&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">table</span> <span class="attr">name</span>=<span class="string">&quot;customer&quot;</span> <span class="attr">dataNode</span>=<span class="string">&quot;dn2&quot;</span> &gt;</span><span class="tag">&lt;/<span class="name">table</span>&gt;</span></span><br><span class="line">            	<span class="tag">&lt;<span class="name">table</span> <span class="attr">name</span>=<span class="string">&quot;orders&quot;</span> <span class="attr">dataNode</span>=<span class="string">&quot;dn1&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">table</span>&gt;</span></span><br><span class="line"><span class="comment">&lt;!-- dictionary写入了dn1、dn2两个节点,分片的规则为：mod-long 源于rule.xml文件中tableRule的name --&gt;</span></span><br><span class="line">            	<span class="tag">&lt;<span class="name">table</span> <span class="attr">name</span>=<span class="string">&quot;dictionary&quot;</span> <span class="attr">primaryKey</span>=<span class="string">&quot;id&quot;</span> <span class="attr">autoIncrement</span>=<span class="string">&quot;true&quot;</span> <span class="attr">dataNode</span>=<span class="string">&quot;dn1,dn2&quot;</span>  <span class="attr">rule</span>=<span class="string">&quot;mod-long&quot;</span> /&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">schema</span>&gt;</span></span><br><span class="line">        <span class="comment">&lt;!-- 分片配置 --&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">dataNode</span> <span class="attr">name</span>=<span class="string">&quot;dn1&quot;</span> <span class="attr">dataHost</span>=<span class="string">&quot;host1&quot;</span> <span class="attr">database</span>=<span class="string">&quot;orders__200405&quot;</span> /&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">dataNode</span> <span class="attr">name</span>=<span class="string">&quot;dn2&quot;</span> <span class="attr">dataHost</span>=<span class="string">&quot;host2&quot;</span> <span class="attr">database</span>=<span class="string">&quot;orders_200405&quot;</span> /&gt;</span></span><br><span class="line">    </span><br><span class="line">       <span class="comment">&lt;!-- 物理数据库配置 --&gt;</span></span><br><span class="line">       <span class="comment">&lt;!--balance=&quot;0&quot;不配置读写分离 --&gt;</span></span><br><span class="line">       <span class="tag">&lt;<span class="name">dataHost</span> <span class="attr">name</span>=<span class="string">&quot;host1&quot;</span> <span class="attr">maxCon</span>=<span class="string">&quot;1000&quot;</span> <span class="attr">minCon</span>=<span class="string">&quot;10&quot;</span> <span class="attr">balance</span>=<span class="string">&quot;0&quot;</span></span></span><br><span class="line"><span class="tag">                          <span class="attr">writeType</span>=<span class="string">&quot;0&quot;</span> <span class="attr">dbType</span>=<span class="string">&quot;mysql&quot;</span> <span class="attr">dbDriver</span>=<span class="string">&quot;native&quot;</span> <span class="attr">switchType</span>=<span class="string">&quot;1&quot;</span>  <span class="attr">slaveThreshold</span>=<span class="string">&quot;100&quot;</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">heartbeat</span>&gt;</span>select user()<span class="tag">&lt;/<span class="name">heartbeat</span>&gt;</span></span><br><span class="line">                <span class="comment">&lt;!-- can have multi write hosts --&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">writeHost</span> <span class="attr">host</span>=<span class="string">&quot;hostM1&quot;</span> <span class="attr">url</span>=<span class="string">&quot;192.168.0.104:3306&quot;</span> <span class="attr">user</span>=<span class="string">&quot;root&quot;</span></span></span><br><span class="line"><span class="tag">                                   <span class="attr">password</span>=<span class="string">&quot;000000&quot;</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;/<span class="name">writeHost</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">dataHost</span>&gt;</span></span><br><span class="line">        </span><br><span class="line"><span class="tag">&lt;<span class="name">dataHost</span> <span class="attr">name</span>=<span class="string">&quot;host2&quot;</span> <span class="attr">maxCon</span>=<span class="string">&quot;1000&quot;</span> <span class="attr">minCon</span>=<span class="string">&quot;10&quot;</span> <span class="attr">balance</span>=<span class="string">&quot;0&quot;</span></span></span><br><span class="line"><span class="tag">                          <span class="attr">writeType</span>=<span class="string">&quot;0&quot;</span> <span class="attr">dbType</span>=<span class="string">&quot;mysql&quot;</span> <span class="attr">dbDriver</span>=<span class="string">&quot;native&quot;</span> <span class="attr">switchType</span>=<span class="string">&quot;1&quot;</span>  <span class="attr">slaveThreshold</span>=<span class="string">&quot;100&quot;</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">heartbeat</span>&gt;</span>select user()<span class="tag">&lt;/<span class="name">heartbeat</span>&gt;</span></span><br><span class="line">                <span class="comment">&lt;!-- can have multi write hosts --&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">writeHost</span> <span class="attr">host</span>=<span class="string">&quot;hostM2&quot;</span> <span class="attr">url</span>=<span class="string">&quot;192.168.107.108:3306&quot;</span> <span class="attr">user</span>=<span class="string">&quot;hzy&quot;</span></span></span><br><span class="line"><span class="tag">                                   <span class="attr">password</span>=<span class="string">&quot;000000&quot;</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;/<span class="name">writeHost</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">dataHost</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;/<span class="name">mycat:schema</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>rule.xml</strong><br>定义分片规则</p>
+<p>这个文件里面主要有 tableRule 和 function 这两个标签。在具体使<br>用过程中可以按照需求添加 tableRule 和 function。 </p>
+<p>mod-long就是将数据平均拆分。因为是两台物理库，所以rule.xml中mod-long对应的function count为2</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"> </span><br><span class="line"><span class="tag">&lt;<span class="name">tableRule</span> <span class="attr">name</span>=<span class="string">&quot;mod_rule&quot;</span>&gt;</span></span><br><span class="line">             <span class="tag">&lt;<span class="name">rule</span>&gt;</span></span><br><span class="line">                        <span class="tag">&lt;<span class="name">columns</span>&gt;</span>customer_id<span class="tag">&lt;/<span class="name">columns</span>&gt;</span></span><br><span class="line">                        <span class="tag">&lt;<span class="name">algorithm</span>&gt;</span>mod-long<span class="tag">&lt;/<span class="name">algorithm</span>&gt;</span></span><br><span class="line">             <span class="tag">&lt;/<span class="name">rule</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">tableRule</span>&gt;</span></span><br><span class="line"> </span><br><span class="line"><span class="tag">&lt;<span class="name">function</span> <span class="attr">name</span>=<span class="string">&quot;mod-long&quot;</span> <span class="attr">class</span>=<span class="string">&quot;io.mycat.route.function.PartitionByMod&quot;</span>&gt;</span></span><br><span class="line">                <span class="comment">&lt;!--多少数据节点 --&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;count&quot;</span>&gt;</span>2<span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">function</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>tableRule</strong></p>
+<ul>
+<li>name 属性指定唯一的名字，用于标识不同的表规则</li>
+<li>内嵌的 rule 标签则指定对物理表中的哪一列进行拆分(columns)和使用什么路由算法(algorithm)</li>
+</ul>
+<p>algorithm 使用 function 标签中的 name 属性。连接表规则和具体路由算法。当然，多个表规则可以连接到<br>同一个路由算法上。table 标签内使用。让逻辑表使用这个规则进行分片</p>
+<p><strong>function</strong></p>
+<ul>
+<li><p>name 指定算法的名字</p>
+</li>
+<li><p>class 制定路由算法具体的类名字</p>
+</li>
+<li><p>property 为具体算法需要用到的一些属性</p>
+</li>
+</ul>
+<p><strong>常用分片规则</strong><br>       分片枚举（hash-int）：在配置文件中配置可能出现的枚举id，配置分片<br>       固定分片Hash算法（func1）：二进制操作的求模运算<br>       范围约定（rang-long）：提前规定好字段范围属于哪个分片<br>       取模（mod-long）：根据ID进行10进制的求模运算<br>       日期分片（sharding-by-date）：按照时间划分<br>       取模范围（sharding-by-pattern）：按照取模运算和范围运算结合<br>       应用指定（sharding-by-substring）：运行阶段有应用自主决定路由到那个分片</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">function</span> <span class="attr">name</span>=<span class="string">&quot;murmur&quot;</span></span></span><br><span class="line"><span class="tag">		<span class="attr">class</span>=<span class="string">&quot;io.mycat.route.function.PartitionByMurmurHash&quot;</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;seed&quot;</span>&gt;</span>0<span class="tag">&lt;/<span class="name">property</span>&gt;</span><span class="comment">&lt;!-- 默认是0 --&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;count&quot;</span>&gt;</span>2<span class="tag">&lt;/<span class="name">property</span>&gt;</span><span class="comment">&lt;!-- 要分片的数据库节点数量，必须指定，否则没法分片 --&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;virtualBucketTimes&quot;</span>&gt;</span>160<span class="tag">&lt;/<span class="name">property</span>&gt;</span><span class="comment">&lt;!-- 一个实际的数据库节点被映射为这么多虚拟节点，默认是160倍，也就是虚拟节点数是物理节点数的160倍 --&gt;</span></span><br><span class="line">		<span class="comment">&lt;!-- &lt;property name=&quot;weightMapFile&quot;&gt;weightMapFile&lt;/property&gt; 节点的权重，没有指定权重的节点默认是1。以properties文件的格式填写，以从0开始到count-1的整数值也就是节点索引为key，以节点权重值为值。所有权重值必须是正整数，否则以1代替 --&gt;</span></span><br><span class="line">		<span class="comment">&lt;!-- &lt;property name=&quot;bucketMapPath&quot;&gt;/etc/mycat/bucketMapPath&lt;/property&gt; </span></span><br><span class="line"><span class="comment">			用于测试时观察各物理节点与虚拟节点的分布情况，如果指定了这个属性，会把虚拟节点的murmur hash值与物理节点的映射按行输出到这个文件，没有默认值，如果不指定，就不会输出任何东西 --&gt;</span></span><br><span class="line">	<span class="tag">&lt;/<span class="name">function</span>&gt;</span></span><br><span class="line"></span><br><span class="line">	<span class="tag">&lt;<span class="name">function</span> <span class="attr">name</span>=<span class="string">&quot;crc32slot&quot;</span></span></span><br><span class="line"><span class="tag">			  <span class="attr">class</span>=<span class="string">&quot;io.mycat.route.function.PartitionByCRC32PreSlot&quot;</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;count&quot;</span>&gt;</span>2<span class="tag">&lt;/<span class="name">property</span>&gt;</span><span class="comment">&lt;!-- 要分片的数据库节点数量，必须指定，否则没法分片 --&gt;</span></span><br><span class="line">	<span class="tag">&lt;/<span class="name">function</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">function</span> <span class="attr">name</span>=<span class="string">&quot;hash-int&quot;</span></span></span><br><span class="line"><span class="tag">		<span class="attr">class</span>=<span class="string">&quot;io.mycat.route.function.PartitionByFileMap&quot;</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;mapFile&quot;</span>&gt;</span>partition-hash-int.txt<span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;/<span class="name">function</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">function</span> <span class="attr">name</span>=<span class="string">&quot;rang-long&quot;</span></span></span><br><span class="line"><span class="tag">		<span class="attr">class</span>=<span class="string">&quot;io.mycat.route.function.AutoPartitionByLong&quot;</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;mapFile&quot;</span>&gt;</span>autopartition-long.txt<span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;/<span class="name">function</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">function</span> <span class="attr">name</span>=<span class="string">&quot;mod-long&quot;</span> <span class="attr">class</span>=<span class="string">&quot;io.mycat.route.function.PartitionByMod&quot;</span>&gt;</span></span><br><span class="line">		<span class="comment">&lt;!-- how many data nodes --&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;count&quot;</span>&gt;</span>3<span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;/<span class="name">function</span>&gt;</span></span><br><span class="line"></span><br><span class="line">	<span class="tag">&lt;<span class="name">function</span> <span class="attr">name</span>=<span class="string">&quot;func1&quot;</span> <span class="attr">class</span>=<span class="string">&quot;io.mycat.route.function.PartitionByLong&quot;</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;partitionCount&quot;</span>&gt;</span>8<span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;partitionLength&quot;</span>&gt;</span>128<span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;/<span class="name">function</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">function</span> <span class="attr">name</span>=<span class="string">&quot;latestMonth&quot;</span></span></span><br><span class="line"><span class="tag">		<span class="attr">class</span>=<span class="string">&quot;io.mycat.route.function.LatestMonthPartion&quot;</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;splitOneDay&quot;</span>&gt;</span>24<span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;/<span class="name">function</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">function</span> <span class="attr">name</span>=<span class="string">&quot;partbymonth&quot;</span></span></span><br><span class="line"><span class="tag">		<span class="attr">class</span>=<span class="string">&quot;io.mycat.route.function.PartitionByMonth&quot;</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;dateFormat&quot;</span>&gt;</span>yyyy-MM-dd<span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;sBeginDate&quot;</span>&gt;</span>2015-01-01<span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;/<span class="name">function</span>&gt;</span></span><br><span class="line">	</span><br><span class="line">	<span class="tag">&lt;<span class="name">function</span> <span class="attr">name</span>=<span class="string">&quot;rang-mod&quot;</span> <span class="attr">class</span>=<span class="string">&quot;io.mycat.route.function.PartitionByRangeMod&quot;</span>&gt;</span></span><br><span class="line">        	<span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;mapFile&quot;</span>&gt;</span>partition-range-mod.txt<span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;/<span class="name">function</span>&gt;</span></span><br><span class="line">	</span><br><span class="line">	<span class="tag">&lt;<span class="name">function</span> <span class="attr">name</span>=<span class="string">&quot;jump-consistent-hash&quot;</span> <span class="attr">class</span>=<span class="string">&quot;io.mycat.route.function.PartitionByJumpConsistentHash&quot;</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;totalBuckets&quot;</span>&gt;</span>3<span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;/<span class="name">function</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/mysql/" rel="tag"># mysql</a>
+              <a href="/tags/B-Tree/" rel="tag"># B+Tree</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2019/03/26/Vue%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" rel="prev" title="Vue学习笔记">
+      <i class="fa fa-chevron-left"></i> Vue学习笔记
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2019/10/26/MyCat%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" rel="next" title="MyCat学习笔记">
+      MyCat学习笔记 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#mysql%E9%80%BB%E8%BE%91%E6%9E%B6%E6%9E%84"><span class="nav-number">1.</span> <span class="nav-text">mysql逻辑架构</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AD%98%E5%82%A8%E5%BC%95%E6%93%8E"><span class="nav-number">1.1.</span> <span class="nav-text">存储引擎</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%B4%A2%E5%BC%95"><span class="nav-number">2.</span> <span class="nav-text">索引</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%B4%A2%E5%BC%95%E7%BB%93%E6%9E%84"><span class="nav-number">2.1.</span> <span class="nav-text">索引结构</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#BTree"><span class="nav-number">2.1.1.</span> <span class="nav-text">BTree</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#B-Tree"><span class="nav-number">2.1.2.</span> <span class="nav-text">B+Tree</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#B-Tree%E4%B8%8EB-Tree-%E7%9A%84%E5%8C%BA%E5%88%AB"><span class="nav-number">2.1.3.</span> <span class="nav-text">B+Tree与B-Tree 的区别</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%B3%E4%BA%8E%E6%97%B6%E9%97%B4%E5%A4%8D%E6%9D%82%E5%BA%A6"><span class="nav-number">2.1.4.</span> <span class="nav-text">关于时间复杂度</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%81%9A%E7%B0%87%E7%B4%A2%E5%BC%95%E5%92%8C%E9%9D%9E%E8%81%9A%E7%B0%87%E7%B4%A2%E5%BC%95"><span class="nav-number">2.1.5.</span> <span class="nav-text">聚簇索引和非聚簇索引</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%B4%A2%E5%BC%95%E5%88%86%E7%B1%BB"><span class="nav-number">2.2.</span> <span class="nav-text">索引分类</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8D%95%E5%80%BC%E7%B4%A2%E5%BC%95"><span class="nav-number">2.2.1.</span> <span class="nav-text">单值索引</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%94%AF%E4%B8%80%E7%B4%A2%E5%BC%95"><span class="nav-number">2.2.2.</span> <span class="nav-text">唯一索引</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%BB%E9%94%AE%E7%B4%A2%E5%BC%95"><span class="nav-number">2.2.3.</span> <span class="nav-text">主键索引</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A4%8D%E5%90%88%E7%B4%A2%E5%BC%95"><span class="nav-number">2.2.4.</span> <span class="nav-text">复合索引</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8ALTER%E5%91%BD%E4%BB%A4"><span class="nav-number">2.2.5.</span> <span class="nav-text">使用ALTER命令</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%93%AA%E4%BA%9B%E6%83%85%E5%86%B5%E9%9C%80%E8%A6%81%E5%88%9B%E5%BB%BA%E7%B4%A2%E5%BC%95"><span class="nav-number">2.2.6.</span> <span class="nav-text">哪些情况需要创建索引</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%93%AA%E4%BA%9B%E6%83%85%E5%86%B5%E4%B8%8D%E8%A6%81%E5%88%9B%E5%BB%BA%E7%B4%A2%E5%BC%95"><span class="nav-number">2.2.7.</span> <span class="nav-text">哪些情况不要创建索引</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%A7%E8%83%BD%E5%88%86%E6%9E%90"><span class="nav-number">2.3.</span> <span class="nav-text">性能分析</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%89%A7%E8%A1%8C%E8%AE%A1%E5%88%92%E5%8C%85%E5%90%AB%E7%9A%84%E4%BF%A1%E6%81%AF"><span class="nav-number">2.3.1.</span> <span class="nav-text">执行计划包含的信息:</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A6%82%E4%BD%95%E6%AD%A3%E7%A1%AE%E7%9A%84%E5%88%A0%E9%99%A4%E7%B4%A2%E5%BC%95"><span class="nav-number">2.3.2.</span> <span class="nav-text">如何正确的删除索引</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%B4%A2%E5%BC%95%E6%B3%A8%E6%84%8F%E4%BA%8B%E9%A1%B9"><span class="nav-number">2.3.3.</span> <span class="nav-text">索引注意事项</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%85%A8%E5%80%BC%E5%8C%B9%E9%85%8D%E6%88%91%E6%9C%80%E7%88%B1"><span class="nav-number">2.3.3.1.</span> <span class="nav-text">全值匹配我最爱</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%9C%80%E4%BD%B3%E5%B7%A6%E5%89%8D%E7%BC%80%E6%B3%95%E5%88%99"><span class="nav-number">2.3.3.2.</span> <span class="nav-text">最佳左前缀法则</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%8D%E5%9C%A8%E7%B4%A2%E5%BC%95%E5%88%97%E4%B8%8A%E5%81%9A%E4%BB%BB%E4%BD%95%E6%93%8D%E4%BD%9C"><span class="nav-number">2.3.3.3.</span> <span class="nav-text">不在索引列上做任何操作</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%AD%98%E5%82%A8%E5%BC%95%E6%93%8E%E4%B8%8D%E8%83%BD%E4%BD%BF%E7%94%A8%E7%B4%A2%E5%BC%95%E4%B8%AD%E8%8C%83%E5%9B%B4%E6%9D%A1%E4%BB%B6%E5%8F%B3%E8%BE%B9%E7%9A%84%E5%88%97"><span class="nav-number">2.3.3.4.</span> <span class="nav-text">存储引擎不能使用索引中范围条件右边的列</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#mysql-%E5%9C%A8%E4%BD%BF%E7%94%A8%E4%B8%8D%E7%AD%89%E4%BA%8E-%E6%88%96%E8%80%85-lt-gt-%E7%9A%84%E6%97%B6%E5%80%99%E6%97%A0%E6%B3%95%E4%BD%BF%E7%94%A8%E7%B4%A2%E5%BC%95%E4%BC%9A%E5%AF%BC%E8%87%B4%E5%85%A8%E8%A1%A8%E6%89%AB%E6%8F%8F"><span class="nav-number">2.3.3.5.</span> <span class="nav-text">mysql 在使用不等于(!&#x3D; 或者&lt;&gt;)的时候无法使用索引会导致全表扫描</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#is-not-null-%E6%97%A0%E6%B3%95%E4%BD%BF%E7%94%A8%E7%B4%A2%E5%BC%95-%E4%BD%86%E6%98%AFis-null%E5%8F%AF%E4%BB%A5%E4%BD%BF%E7%94%A8%E7%B4%A2%E5%BC%95"><span class="nav-number">2.3.3.6.</span> <span class="nav-text">is not null 无法使用索引,但是is null可以使用索引</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#like%E4%BB%A5%E9%80%9A%E9%85%8D%E7%AC%A6%E5%BC%80%E5%A4%B4-%E2%80%98-abc%E2%80%A6%E2%80%99-%E7%B4%A2%E5%BC%95%E5%A4%B1%E6%95%88"><span class="nav-number">2.3.3.7.</span> <span class="nav-text">like以通配符开头(‘%abc…’)索引失效</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%AD%97%E7%AC%A6%E4%B8%B2%E4%B8%8D%E5%8A%A0%E5%8D%95%E5%BC%95%E5%8F%B7%E7%B4%A2%E5%BC%95%E5%A4%B1%E6%95%88"><span class="nav-number">2.3.3.8.</span> <span class="nav-text">字符串不加单引号索引失效</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%80%E8%88%AC%E6%80%A7%E5%BB%BA%E8%AE%AE"><span class="nav-number">2.3.3.9.</span> <span class="nav-text">一般性建议</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%B3%E8%81%94%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96"><span class="nav-number">2.4.</span> <span class="nav-text">关联查询优化</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AD%90%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96"><span class="nav-number">2.5.</span> <span class="nav-text">子查询优化</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%8E%92%E5%BA%8F%E5%88%86%E7%BB%84%E4%BC%98%E5%8C%96"><span class="nav-number">2.6.</span> <span class="nav-text">排序分组优化</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9F%A5%E8%AF%A2%E6%88%AA%E5%8F%96%E5%88%86%E6%9E%90"><span class="nav-number">2.7.</span> <span class="nav-text">查询截取分析</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%85%A2%E6%9F%A5%E8%AF%A2%E6%97%A5%E5%BF%97"><span class="nav-number">2.7.1.</span> <span class="nav-text">慢查询日志</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%A7%86%E5%9B%BE"><span class="nav-number">3.</span> <span class="nav-text">视图</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6"><span class="nav-number">4.</span> <span class="nav-text">主从复制</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E4%B8%BB%E4%B8%80%E4%B8%9B%E5%B8%B8%E8%A7%81%E9%85%8D%E7%BD%AE"><span class="nav-number">4.1.</span> <span class="nav-text">一主一丛常见配置</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#MyCat"><span class="nav-number">4.2.</span> <span class="nav-text">MyCat</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E5%88%86%E7%89%87"><span class="nav-number">4.3.</span> <span class="nav-text">数据分片</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%89%E8%A3%85"><span class="nav-number">4.4.</span> <span class="nav-text">安装</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%AF%BB%E5%86%99%E5%88%86%E7%A6%BB"><span class="nav-number">4.5.</span> <span class="nav-text">读写分离</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%88%86%E5%BA%93"><span class="nav-number">4.6.</span> <span class="nav-text">分库</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%B0%B4%E5%B9%B3%E5%88%86%E8%A1%A8"><span class="nav-number">4.7.</span> <span class="nav-text">水平分表</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="hzy"
+      src="/uploads/cat.jpg">
+  <p class="site-author-name" itemprop="name">hzy</p>
+  <div class="site-description" itemprop="description">记录学习的过程</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">10</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">12</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/growup-hzy" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;growup-hzy" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/edcfanshzy@163.com" title="E-Mail → edcfanshzy@163.com"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">hzy</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script size="300" alpha="0.6" zIndex="-1" src="/lib/canvas-ribbon/canvas-ribbon.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
