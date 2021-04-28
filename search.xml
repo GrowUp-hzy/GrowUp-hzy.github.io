@@ -3878,7 +3878,7 @@
 <a id="more"></a>
 
 <p><strong>MVVM</strong></p>
-<p><img src="D:\study\Markdown\images\bg2015020110.png" alt="img"></p>
+<p><img src="https://gitee.com/hanzhengyu/picture-bed-2021/raw/master/20210428170907.png" alt="img"></p>
 <ol>
 <li><p>各部分之间的通信，都是双向的。</p>
 </li>
@@ -4126,7 +4126,7 @@
 <p>因为箭头函数并没有 <code>this</code>，<code>this</code> 会作为变量一直向上级词法作用域查找，直至找到为止，经常导致 <code>Uncaught TypeError: Cannot read property of undefined</code> 或 <code>Uncaught TypeError: this.myMethod is not a function</code> 之类的错误。</p>
 </blockquote>
 <p><strong>生命周期图示</strong></p>
-<p><img src="D:\study\Markdown\images\1158910-20180321144509069-1773072070.png" alt="1158910-20180321144509069-1773072070"></p>
+<p><img src="https://gitee.com/hanzhengyu/picture-bed-2021/raw/master/20210428171152.png" alt="1158910-20180321144509069-1773072070"></p>
 <h2 id="组件化应用构建"><a href="#组件化应用构建" class="headerlink" title="组件化应用构建"></a>组件化应用构建</h2><p><img src="D:\study\Markdown\images\image-20200521195722921.png" alt="image-20200521195722921"></p>
 <p>在 Vue 里，一个组件本质上是一个拥有预定义选项的一个 Vue 实例。在 Vue 中注册组件很简单：</p>
 <figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line"><span class="comment">//定义名为todo-item的组件</span></span><br><span class="line">Vue.component(<span class="string">&#x27;todo-item&#x27;</span>, &#123;</span><br><span class="line">  template: <span class="string">&#x27;&lt;li&gt;这是个待办项&lt;/li&gt;&#x27;</span></span><br><span class="line">&#125;)</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> app = <span class="keyword">new</span> Vue(...)</span><br></pre></td></tr></table></figure>
@@ -5060,7 +5060,7 @@
 <li>如果需要使用滚动视图，请使用 <a href="https://uniapp.dcloud.io/component/scroll-view">scroll-view</a></li>
 <li>如果使用 <code>&lt;div&gt;</code> 组件编译时会被转换为 <code>&lt;view&gt;</code>。</li>
 </ul>
-<img src="D:\study\Markdown\images\view.png" alt="img" style="zoom:50%;" />
+<img src="https://gitee.com/hanzhengyu/picture-bed-2021/raw/master/20210428171437.png" style="zoom:50%;" />
 
 <h3 id="uni-request-OBJECT"><a href="#uni-request-OBJECT" class="headerlink" title="uni.request(OBJECT)"></a>uni.request(OBJECT)</h3><p><a href="https://uniapp.dcloud.io/api/request/request?id=request">发起网络请求</a>。</p>
 <blockquote>
